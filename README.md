@@ -6,7 +6,7 @@
 
 [//]: https://img.shields.io/badge/<LABEL>-<MESSAGE>-<COLOR>
 
-[![Author](https://img.shields.io/badge/Author-miro-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101/)
+**`miroslavpejic85`** [![Author](https://img.shields.io/badge/Author-miro-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101)
 ![License: CC-NC](https://img.shields.io/badge/License-CCNC-blue.svg)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-brightgreen.svg)](https://paypal.me/MiroslavPejic?locale.x=it_IT)
 [![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/miroslavpejic85/mirotalk)
@@ -14,9 +14,12 @@
 [![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Discord](https://img.shields.io/badge/chat-discord-green)](https://discord.gg/c5AZn8yKbQ)
 
+**`mmguero`** [![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/mmguero/mirotalk)
+[![Docker](https://img.shields.io/docker/pulls/mmguero/mirotalk)](https://hub.docker.com/r/mmguero/mirotalk)
+
 Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn. `Mirotalk` provides video quality and latency not available with traditional technology.
 
-Open the app in one of following **supported browser**
+Open the app in one of following **supported browsers**
 
 [//]: #![webrtc](www/images/webrtc.png)
 
@@ -66,7 +69,7 @@ Open the app in one of following **supported browser**
 - Clone this repo
 
 ```bash
-git clone https://github.com/miroslavpejic85/mirotalk.git
+git clone https://github.com/mmguero/mirotalk.git
 cd mirotalk
 ```
 
@@ -193,4 +196,4 @@ From where I took inspiration for this project. ❤️
 
 ---
 
-<p align="center"> Made with ❤️ by <a href="https://www.linkedin.com/in/miroslav-pejic-976a07101/">Miroslav Pejic</a></p>
+<p align="center"><a href="https://www.linkedin.com/in/miroslav-pejic-976a07101/">Miroslav Pejic</a></p>

@@ -4139,14 +4139,14 @@ function getAbout() {
   Swal.fire({
     background: swalBackground,
     position: "center",
-    title: "<strong>WebRTC Made with ❤️</strong>",
+    title: "<strong>Mirotalk</strong>",
     imageAlt: "mirotalk-about",
     imageUrl: aboutImg,
     html: `
     <br/>
+    <div id="about">fork on<a href="https://github.com/mmguero/mirotalk" target="_blank"><h1><strong> GitHub </strong></h1></a></div>
     <div id="about"><b>open source</b> project on<a href="https://github.com/miroslavpejic85/mirotalk" target="_blank"><h1><strong> GitHub </strong></h1></a></div>
     <div id="author"><a href="https://www.linkedin.com/in/miroslav-pejic-976a07101/" target="_blank">Author: Miroslav Pejic</a></div><br>
-    <button id="sponsorBtn" class="far fa-heart pulsate" onclick="window.open('https://github.com/sponsors/miroslavpejic85?o=esb')"> Sponsor</button>
     `,
     showClass: {
       popup: "animate__animated animate__fadeInDown",
