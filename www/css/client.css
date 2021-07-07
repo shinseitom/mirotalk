@@ -737,9 +737,9 @@ emoji-picker {
 }
 
 #myVideo.mirror {
-  transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
+  transform: rotateY(180deg);
 }
 
 video {
@@ -841,6 +841,7 @@ video:fullscreen {
 #mySettings {
   display: none;
   z-index: 15;
+  min-width: 320px;
   /* center */
   position: absolute;
   top: 50%;
@@ -898,7 +899,6 @@ video:fullscreen {
 }
 
 #myPeerNameSet {
-  font-size: 1rem;
   border: 1px solid white;
   color: white;
   background-color: #2b2b2b;
@@ -909,7 +909,6 @@ video:fullscreen {
 #hideEveryoneBtn {
   padding: 5px;
   border-radius: 5px;
-  font-size: 1rem;
   color: white;
   background-color: transparent;
 }
@@ -925,6 +924,50 @@ video:fullscreen {
   color: rgb(255, 0, 0);
   transform: var(--btns-hover-scale);
   transition: all 0.3s ease-in-out;
+}
+
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 1px solid rgb(0, 0, 0);
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  color: white;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: transparent;
+  color: rgb(0, 180, 50);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid rgb(0, 0, 0);
+  border-top: none;
+}
+
+/* on open display devices tab */
+#tabDevices {
+  display: block;
 }
 
 /*--------------------------------------------------------------
@@ -1058,20 +1101,28 @@ progress {
 }
 
 /*--------------------------------------------------------------
-# Other
+# About
 --------------------------------------------------------------*/
 
-#about a {
-  color: red;
+#about {
+  cursor: default;
   /*text-decoration: none;*/
+}
+#about b {
+  color: rgb(0, 180, 50);
 }
 #author a {
   color: white;
+  text-decoration: none;
+}
+#about img {
+  cursor: pointer;
+  border-radius: 10px;
 }
 
-#webRTCSeo {
-  /* just for SEO */
-  display: none;
+#author a:hover {
+  color: rgb(0, 180, 50);
+  transition: all 0.3s ease-in-out;
 }
 
 /* about Sponsor btn */
@@ -1088,6 +1139,15 @@ progress {
 }
 #sponsorBtn:hover {
   font-weight: bold;
+}
+
+/*--------------------------------------------------------------
+# Other
+--------------------------------------------------------------*/
+
+#webRTCSeo {
+  /* just for SEO */
+  display: none;
 }
 
 /*

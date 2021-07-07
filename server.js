@@ -13,6 +13,8 @@ dependencies: {
   express     : https://www.npmjs.com/package/express
   ngrok       : https://www.npmjs.com/package/ngrok
   socket.io   : https://www.npmjs.com/package/socket.io
+  swagger     : https://www.npmjs.com/package/swagger-ui-express
+  yamljs      : https://www.npmjs.com/package/yamljs
 }
 
 Mirotalk Signaling Server
@@ -47,10 +49,15 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server().listen(server);
 const ngrok = require("ngrok");
+const yamlJS = require("yamljs");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = yamlJS.load(__dirname + "/api/swagger.yaml");
+const apiBasePath = "/api/v1";
 
 let API_KEY_SECRET = process.env.API_KEY_SECRET || "mirotalk_default_secret";
 let PORT = process.env.PORT || 3000; // signalingServerPort
 let localHost = "http://localhost:" + PORT; // http
+let api_docs = localHost + apiBasePath + "/docs"; // api docs
 let channels = {}; // collect channels
 let sockets = {}; // collect sockets
 let peers = {}; // collect peers info grp by channels
@@ -129,8 +136,18 @@ app.get("/join/*", (req, res) => {
 /**
   MIROTALK API v1
   The response will give you a entrypoint / Room URL for your meeting.
+  For api docs we use: https://swagger.io/
 */
-app.post(["/api/v1/meeting"], (req, res) => {
+
+// api docs
+app.use(
+  apiBasePath + "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+);
+
+// request meeting room endpoint
+app.post([apiBasePath + "/meeting"], (req, res) => {
   // check if user was authorized for the api call
   let authorization = req.headers.authorization;
   if (authorization != API_KEY_SECRET) {
@@ -218,6 +235,7 @@ async function ngrokStart() {
     logme("settings", {
       http: localHost,
       https: tunnelHttps,
+      api_docs: api_docs,
       api_key_secret: API_KEY_SECRET,
       iceServers: iceServers,
       ngrok: {
@@ -255,6 +273,7 @@ server.listen(PORT, null, () => {
     // server settings
     logme("settings", {
       http: localHost,
+      api_docs: api_docs,
       api_key_secret: API_KEY_SECRET,
       iceServers: iceServers,
     });
@@ -339,7 +358,7 @@ io.sockets.on("connect", (socket) => {
         should_create_offer: true,
         iceServers: iceServers,
       });
-      logme("[" + socket.id + "] emit add Peer [" + id + "]");
+      logme("[" + socket.id + "] emit addPeer [" + id + "]");
     }
 
     channels[channel][socket.id] = socket;
@@ -368,7 +387,7 @@ io.sockets.on("connect", (socket) => {
     for (let id in channels[channel]) {
       await channels[channel][id].emit("removePeer", { peer_id: socket.id });
       await socket.emit("removePeer", { peer_id: id });
-      logme("[" + socket.id + "] emit remove Peer [" + id + "]");
+      logme("[" + socket.id + "] emit removePeer [" + id + "]");
     }
   }
 
@@ -382,7 +401,7 @@ io.sockets.on("connect", (socket) => {
     logme(
       "[" + socket.id + "] relay ICE-candidate to [" + peer_id + "] ",
       { address: config.ice_candidate.address }
-    ); // ice_candidate
+    );
     */
     if (peer_id in sockets) {
       sockets[peer_id].emit("iceCandidate", {
@@ -402,7 +421,7 @@ io.sockets.on("connect", (socket) => {
     logme(
       "[" + socket.id + "] relay SessionDescription to [" + peer_id + "] ",
       { type: session_description.type }
-    ); // session_description
+    );
 
     if (peer_id in sockets) {
       sockets[peer_id].emit("sessionDescription", {
@@ -413,58 +432,9 @@ io.sockets.on("connect", (socket) => {
   });
 
   /**
-   * Relay MSG to peers
-   */
-  socket.on("msg", (config) => {
-    let peerConnections = config.peerConnections;
-    let room_id = config.room_id;
-    let privateMsg = config.privateMsg;
-    let id = config.peer_id;
-    let name = config.name;
-    let msg = config.msg;
-
-    logme(
-      "[" +
-        socket.id +
-        "] emit onMessage to [room_id: " +
-        room_id +
-        " private_msg: " +
-        privateMsg +
-        "]",
-      {
-        name: name,
-        msg: msg,
-      }
-    );
-
-    if (privateMsg) {
-      if (sockets[id]) {
-        sockets[id].emit("onMessage", {
-          peer_id: socket.id,
-          privateMsg: privateMsg,
-          name: name,
-          msg: msg,
-        });
-      }
-      return;
-    }
-
-    for (let peer_id in peerConnections) {
-      if (sockets[peer_id]) {
-        sockets[peer_id].emit("onMessage", {
-          peer_id: socket.id,
-          privateMsg: privateMsg,
-          name: name,
-          msg: msg,
-        });
-      }
-    }
-  });
-
-  /**
    * Relay NAME to peers
    */
-  socket.on("cName", (config) => {
+  socket.on("peerName", (config) => {
     let peerConnections = config.peerConnections;
     let room_id = config.room_id;
     let peer_name_old = config.peer_name_old;
@@ -489,13 +459,13 @@ io.sockets.on("connect", (socket) => {
 
     // refresh if found
     if (peer_id_to_update && Object.keys(peerConnections).length != 0) {
-      logme("[" + socket.id + "] emit onCName to [room_id: " + room_id + "]", {
+      logme("[" + socket.id + "] emit peerName to [room_id: " + room_id + "]", {
         peer_id: peer_id_to_update,
         peer_name: peer_name_new,
       });
       for (let peer_id in peerConnections) {
         if (sockets[peer_id]) {
-          sockets[peer_id].emit("onCName", {
+          sockets[peer_id].emit("peerName", {
             peer_id: peer_id_to_update,
             peer_name: peer_name_new,
           });
@@ -542,7 +512,7 @@ io.sockets.on("connect", (socket) => {
     // socket.id aka peer that send this status
     if (Object.keys(peerConnections).length != 0) {
       logme(
-        "[" + socket.id + "] emit onpeerStatus to [room_id: " + room_id + "]",
+        "[" + socket.id + "] emit peerStatus to [room_id: " + room_id + "]",
         {
           peer_id: socket.id,
           element: element,
@@ -551,7 +521,7 @@ io.sockets.on("connect", (socket) => {
       );
       for (let peer_id in peerConnections) {
         if (sockets[peer_id]) {
-          sockets[peer_id].emit("onpeerStatus", {
+          sockets[peer_id].emit("peerStatus", {
             peer_id: socket.id,
             peer_name: peer_name,
             element: element,
@@ -563,52 +533,29 @@ io.sockets.on("connect", (socket) => {
   });
 
   /**
-   * Relay mute everyone in the room
+   * Relay actions to peers in the same room
    */
-  socket.on("muteEveryone", (config) => {
+  socket.on("peerAction", (config) => {
     let peerConnections = config.peerConnections;
     let room_id = config.room_id;
     let peer_name = config.peer_name;
+    let peer_action = config.peer_action;
 
     // socket.id aka peer that send this status
     if (Object.keys(peerConnections).length != 0) {
       logme(
-        "[" + socket.id + "] emit onmuteEveryone to [room_id: " + room_id + "]",
+        "[" + socket.id + "] emit peerAction to [room_id: " + room_id + "]",
         {
           peer_id: socket.id,
           peer_name: peer_name,
+          peer_action: peer_action,
         }
       );
       for (let peer_id in peerConnections) {
         if (sockets[peer_id]) {
-          sockets[peer_id].emit("onmuteEveryone", {
+          sockets[peer_id].emit("peerAction", {
             peer_name: peer_name,
-          });
-        }
-      }
-    }
-  });
-
-  /**
-   * Relay hide everyone in the room
-   */
-  socket.on("hideEveryone", (config) => {
-    let peerConnections = config.peerConnections;
-    let room_id = config.room_id;
-    let peer_name = config.peer_name;
-
-    // socket.id aka peer that send this status
-    if (Object.keys(peerConnections).length != 0) {
-      logme(
-        "[" + socket.id + "] emit onhideEveryone to [room_id: " + room_id + "]",
-        {
-          peer_name: peer_name,
-        }
-      );
-      for (let peer_id in peerConnections) {
-        if (sockets[peer_id]) {
-          sockets[peer_id].emit("onhideEveryone", {
-            peer_name: peer_name,
+            peer_action: peer_action,
           });
         }
       }
@@ -634,7 +581,7 @@ io.sockets.on("connect", (socket) => {
     );
 
     if (peer_id in sockets) {
-      sockets[peer_id].emit("onKickOut", {
+      sockets[peer_id].emit("kickOut", {
         peer_name: peer_name,
       });
     }
@@ -674,7 +621,7 @@ io.sockets.on("connect", (socket) => {
     if (Object.keys(peerConnections).length != 0) {
       for (let peer_id in peerConnections) {
         if (sockets[peer_id]) {
-          sockets[peer_id].emit("onFileInfo", file);
+          sockets[peer_id].emit("fileInfo", file);
         }
       }
     }

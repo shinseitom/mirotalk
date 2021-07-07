@@ -6,8 +6,13 @@
 
 [//]: https://img.shields.io/badge/<LABEL>-<MESSAGE>-<COLOR>
 
+<<<<<<< HEAD
 **`miroslavpejic85`** [![Author](https://img.shields.io/badge/Author-miro-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101)
 ![License: CC-NC](https://img.shields.io/badge/License-CCNC-blue.svg)
+=======
+[![Author](https://img.shields.io/badge/Author-miro-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101/)
+![License: CC-NC](https://img.shields.io/badge/License-AGPLv3-blue.svg)
+>>>>>>> upstream/master
 [![Donate](https://img.shields.io/badge/Donate-PayPal-brightgreen.svg)](https://paypal.me/MiroslavPejic?locale.x=it_IT)
 [![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/miroslavpejic85/mirotalk)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?)](https://github.com/prettier/prettier)
@@ -43,6 +48,7 @@ Open the app in one of following **supported browsers**
 - Screen Sharing to present documents, slides, and more...
 - File Sharing, share any files to your participants in the room
 - Select Audio Input - Output && Video source
+- Ability to set video quality up to 4K and adapt the FPS
 - Recording your Screen, Audio and Video
 - Chat with Emoji Picker & Private messages & Save the conversations
 - Simple collaborative whiteboard for the teachers
@@ -50,7 +56,7 @@ Open the app in one of following **supported browsers**
 - Possibility to Change UI Themes
 - Right click on the Video elements for more options
 - Direct `peer-to-peer` connection ensures lowest latency thanks to `webrtc`
-- Supports `API` (Application Programming Interface)
+- Supports [REST API](api/README.md) (Application Programming Interface)
 
 ## Demo
 
@@ -140,13 +146,16 @@ docker-compose down
 
 ## API
 
-The `response` will give you a `entrypoint / Room URL` for `your meeting`.
+The `response` will give you a `entrypoint / Room URL` for `your meeting`, where `authorization: API_KEY_SECRET`.
 
 ```bash
-curl -X POST "http://localhost:3000/api/v1/meeting" -H "authorization: YourApiKeySecret" -H "Content-Type: application/json" -d "{ \"title\": \"Mirotalk GET meeting\"}"
-curl -X POST "https://mirotalk.up.railway.app/api/v1/meeting" -H "authorization: mirotalk_default_secret" -H "Content-Type: application/json" -d "{ \"title\": \"Mirotalk GET meeting\"}"
-curl -X POST "https://mirotalk.herokuapp.com/api/v1/meeting" -H "authorization: mirotalk_default_secret" -H "Content-Type: application/json" -d "{ \"title\": \"Mirotalk GET meeting\"}"
+curl -X POST "http://localhost:3000/api/v1/meeting" -H "authorization: mirotalk_default_secret" -H "Content-Type: application/json"
+curl -X POST "https://mirotalk.up.railway.app/api/v1/meeting" -H "authorization: mirotalk_default_secret" -H "Content-Type: application/json"
+curl -X POST "https://mirotalk.herokuapp.com/api/v1/meeting" -H "authorization: mirotalk_default_secret" -H "Content-Type: application/json"
 ```
+## API Documentation
+
+The server exposes a [swagger](https://swagger.io/) document at http://localhost:3000/api/v1/docs. Or you can check it out live on [railway](https://mirotalk.up.railway.app/api/v1/docs) or [heroku](https://mirotalk.herokuapp.com/api/v1/docs).
 
 ---
 
