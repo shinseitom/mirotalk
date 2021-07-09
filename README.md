@@ -1,4 +1,4 @@
-# Mirotalk
+# MiroTalk
 
 🚀 `A free WebRTC browser-based video call, chat and screen sharing` 🚀
 
@@ -17,7 +17,7 @@
 **`mmguero`** [![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/mmguero/mirotalk)
 [![Docker](https://img.shields.io/docker/pulls/mmguero/mirotalk)](https://hub.docker.com/r/mmguero/mirotalk)
 
-Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn. `Mirotalk` provides video quality and latency not available with traditional technology.
+Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn. `MiroTalk` provides video quality and latency not available with traditional technology.
 
 Open the app in one of following **supported browsers**
 

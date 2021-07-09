@@ -5,7 +5,7 @@
 ██      ██      ██ ██      ██  ██ ██    ██    
  ██████ ███████ ██ ███████ ██   ████    ██   
 
-Mirotalk Browser Client
+MiroTalk Browser Client
 Copyright (C) 2021 Miroslav Pejic <miroslav.pejic.85@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
@@ -688,7 +688,7 @@ function welcomeUser() {
     } else if (result.isDenied) {
       let message = {
         email: "",
-        subject: "Please join our Mirotalk Video Chat Meeting",
+        subject: "Please join our MiroTalk Video Chat Meeting",
         body: "Click to join: " + myRoomUrl,
       };
       shareRoomByEmail(message);
@@ -2418,7 +2418,7 @@ async function shareRoomUrl() {
       } else if (result.isDenied) {
         let message = {
           email: "",
-          subject: "Please join our Mirotalk Video Chat Meeting",
+          subject: "Please join our MiroTalk Video Chat Meeting",
           body: "Click to join: " + myRoomUrl,
         };
         shareRoomByEmail(message);
