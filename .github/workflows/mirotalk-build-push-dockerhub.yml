@@ -1,4 +1,4 @@
-name: mirotalk-build-push
+name: mirotalk-build-push-dockerhub
 
 on:
   push:
