@@ -90,7 +90,7 @@ let chatDataChannels = {}; // keep track of our peer chat data channels
 let fileDataChannels = {}; // keep track of our peer file sharing data channels
 let peerMediaElements = {}; // keep track of our peer <video> tags, indexed by peer_id
 let chatMessages = []; // collect chat messages to save it later if want
-let iceServers = [{ urls: 'stun:stun.l.google.com:19302' }]; // backup iceServers
+let backupIceServers = [{ urls: 'stun:stun.l.google.com:19302' }]; // backup iceServers
 
 let chatInputEmoji = {
     '<3': '\u2764\uFE0F',
@@ -137,6 +137,7 @@ let msgerChat;
 let msgerEmojiBtn;
 let msgerInput;
 let msgerSendBtn;
+let chatDataChannelOpen = false;
 // chat room connected peers
 let msgerCP;
 let msgerCPHeader;
@@ -212,7 +213,8 @@ let sendProgress;
 let sendAbortBtn;
 let sendInProgress = false;
 let fsDataChannelOpen = false;
-const chunkSize = 16 * 1024; //16kb
+// MTU 1kb to prevent drop.
+const chunkSize = 1024;
 
 /**
  * Load all Html elements by Id
@@ -580,7 +582,7 @@ function whoAreYou() {
 
     Swal.fire({
         allowOutsideClick: false,
-        allowEscapeKey : false,
+        allowEscapeKey: false,
         background: swalBackground,
         position: 'center',
         imageAlt: 'mirotalk-name',
@@ -632,12 +634,12 @@ function joinToChannel() {
     console.log('join to channel', roomId);
     signalingSocket.emit('join', {
         channel: roomId,
-        peerInfo: peerInfo,
-        peerGeo: peerGeo,
-        peerName: myPeerName,
-        peerVideo: myVideoStatus,
-        peerAudio: myAudioStatus,
-        peerHand: myHandStatus,
+        peer_info: peerInfo,
+        peer_geo: peerGeo,
+        peer_name: myPeerName,
+        peer_video: myVideoStatus,
+        peer_audio: myAudioStatus,
+        peer_hand: myHandStatus,
     });
 }
 
@@ -693,8 +695,11 @@ function welcomeUser() {
  */
 function handleAddPeer(config) {
     // console.log("addPeer", JSON.stringify(config));
+
     let peer_id = config.peer_id;
     let peers = config.peers;
+    let should_create_offer = config.should_create_offer;
+    let iceServers = config.iceServers;
 
     if (peer_id in peerConnections) {
         // This could happen if the user joins multiple channels where the other peer is also in.
@@ -702,7 +707,7 @@ function handleAddPeer(config) {
         return;
     }
 
-    if (config.iceServers) iceServers = config.iceServers;
+    if (!iceServers) iceServers = backupIceServers;
     console.log('iceServers', iceServers[0]);
 
     // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection
@@ -715,7 +720,7 @@ function handleAddPeer(config) {
     handleAddTracks(peer_id);
     handleRTCDataChannel(peer_id);
 
-    if (config.should_create_offer) handleRtcOffer(peer_id);
+    if (should_create_offer) handleRtcOffer(peer_id);
 
     playSound('addPeer');
 }
@@ -727,16 +732,14 @@ function handleAddPeer(config) {
  */
 function handleOnIceCandidate(peer_id) {
     peerConnections[peer_id].onicecandidate = (event) => {
-        if (event.candidate) {
-            signalingSocket.emit('relayICE', {
-                peer_id: peer_id,
-                ice_candidate: {
-                    sdpMLineIndex: event.candidate.sdpMLineIndex,
-                    candidate: event.candidate.candidate,
-                    address: event.candidate.address,
-                },
-            });
-        }
+        if (!event.candidate) return;
+        signalingSocket.emit('relayICE', {
+            peer_id: peer_id,
+            ice_candidate: {
+                sdpMLineIndex: event.candidate.sdpMLineIndex,
+                candidate: event.candidate.candidate,
+            },
+        });
     };
 }
 
@@ -1816,6 +1819,9 @@ function setMyWhiteboardBtn() {
  * File Transfer button event click
  */
 function setMyFileShareBtn() {
+    // make send file div draggable
+    dragElement(getId('sendFileDiv'), getId('imgShare'));
+
     fileShareBtn.addEventListener('click', (e) => {
         //window.open("https://fromsmash.com"); // for Big Data
         selectFileToShare();
@@ -2424,10 +2430,7 @@ function toggleScreenSharing() {
     } else {
         // on screen sharing stop
         screenMediaPromise = navigator.mediaDevices.getUserMedia(getAudioVideoConstraints());
-        // if screen sharing accidentally closed
-        if (isStreamRecording) {
-            stopStreamRecording();
-        }
+        if (isStreamRecording) stopStreamRecording();
     }
     screenMediaPromise
         .then((screenStream) => {
@@ -2464,21 +2467,20 @@ function setScreenSharingStatus(status) {
  * set myVideoStatus true
  */
 function setMyVideoStatusTrue() {
+    if (myVideoStatus) return;
     // Put video status alredy ON
-    if (myVideoStatus === false) {
-        localMediaStream.getVideoTracks()[0].enabled = true;
-        myVideoStatus = true;
-        videoBtn.className = 'fas fa-video';
-        myVideoStatusIcon.className = 'fas fa-video';
-        myVideoAvatarImage.style.display = 'none';
-        emitPeerStatus('video', myVideoStatus);
-        // only for desktop
-        if (!isMobileDevice) {
-            tippy(videoBtn, {
-                content: 'Click to video OFF',
-                placement: 'right-start',
-            });
-        }
+    localMediaStream.getVideoTracks()[0].enabled = true;
+    myVideoStatus = true;
+    videoBtn.className = 'fas fa-video';
+    myVideoStatusIcon.className = 'fas fa-video';
+    myVideoAvatarImage.style.display = 'none';
+    emitPeerStatus('video', myVideoStatus);
+    // only for desktop
+    if (!isMobileDevice) {
+        tippy(videoBtn, {
+            content: 'Click to video OFF',
+            placement: 'right-start',
+        });
     }
 }
 
@@ -2513,23 +2515,23 @@ function toggleFullScreen() {
  * @param {*} localAudioTrackChange true or false(default)
  */
 function refreshMyStreamToPeers(stream, localAudioTrackChange = false) {
-    if (thereIsPeerConnections()) {
-        // refresh my video stream
-        for (let peer_id in peerConnections) {
-            // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/getSenders
-            let videoSender = peerConnections[peer_id]
-                .getSenders()
-                .find((s) => (s.track ? s.track.kind === 'video' : false));
-            // https://developer.mozilla.org/en-US/docs/Web/API/RTCRtpSender/replaceTrack
-            videoSender.replaceTrack(stream.getVideoTracks()[0]);
+    if (!thereIsPeerConnections()) return;
 
-            if (localAudioTrackChange) {
-                let audioSender = peerConnections[peer_id]
-                    .getSenders()
-                    .find((s) => (s.track ? s.track.kind === 'audio' : false));
-                // https://developer.mozilla.org/en-US/docs/Web/API/RTCRtpSender/replaceTrack
-                audioSender.replaceTrack(stream.getAudioTracks()[0]);
-            }
+    // refresh my stream to peers
+    for (let peer_id in peerConnections) {
+        // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/getSenders
+        let videoSender = peerConnections[peer_id]
+            .getSenders()
+            .find((s) => (s.track ? s.track.kind === 'video' : false));
+        // https://developer.mozilla.org/en-US/docs/Web/API/RTCRtpSender/replaceTrack
+        videoSender.replaceTrack(stream.getVideoTracks()[0]);
+
+        if (localAudioTrackChange) {
+            let audioSender = peerConnections[peer_id]
+                .getSenders()
+                .find((s) => (s.track ? s.track.kind === 'audio' : false));
+            // https://developer.mozilla.org/en-US/docs/Web/API/RTCRtpSender/replaceTrack
+            audioSender.replaceTrack(stream.getAudioTracks()[0]);
         }
     }
 }
@@ -2750,6 +2752,11 @@ function createChatDataChannel(peer_id) {
  */
 function onChatChannelStateChange(event) {
     console.log('onChatChannelStateChange', event.type);
+    if (event.type === 'close') {
+        chatDataChannelOpen = false;
+        return;
+    }
+    chatDataChannelOpen = true;
 }
 
 /**
@@ -2861,8 +2868,8 @@ function sendChatMessage() {
     }
 
     const msg = msgerInput.value;
-    // empity msg
-    if (!msg) return;
+    // empity msg or chat data ch. not opened
+    if (!msg || !chatDataChannelOpen) return;
 
     emitMsg(myPeerName, 'toAll', msg, false, '');
     appendMessage(myPeerName, rightChatAvatar, 'right', msg, false);
@@ -3073,18 +3080,18 @@ function getFormatDate(date) {
  * @param {*} peer_id to sent private message
  */
 function emitMsg(name, toName, msg, privateMsg, peer_id) {
-    if (msg) {
-        const chatMessage = {
-            type: 'chat',
-            name: name,
-            toName: toName,
-            msg: msg,
-            privateMsg: privateMsg,
-        };
-        // peer to peer over DataChannels
-        Object.keys(chatDataChannels).map((peerId) => chatDataChannels[peerId].send(JSON.stringify(chatMessage)));
-        console.log('Send msg', chatMessage);
-    }
+    if (!msg) return;
+
+    const chatMessage = {
+        type: 'chat',
+        name: name,
+        toName: toName,
+        msg: msg,
+        privateMsg: privateMsg,
+    };
+    // peer to peer over DataChannels
+    Object.keys(chatDataChannels).map((peerId) => chatDataChannels[peerId].send(JSON.stringify(chatMessage)));
+    console.log('Send msg', chatMessage);
 }
 
 /**
@@ -3296,15 +3303,21 @@ function setMyVideoStatus(status) {
  * @param {*} config
  */
 function handlePeerStatus(config) {
-    switch (config.element) {
+    //
+    let peer_id = config.peer_id;
+    let peer_name = config.peer_name;
+    let element = config.element;
+    let status = config.status;
+
+    switch (element) {
         case 'video':
-            setPeerVideoStatus(config.peer_id, config.status);
+            setPeerVideoStatus(peer_id, status);
             break;
         case 'audio':
-            setPeerAudioStatus(config.peer_id, config.status);
+            setPeerAudioStatus(peer_id, status);
             break;
         case 'hand':
-            setPeerHandStatus(config.peer_id, config.peer_name, config.status);
+            setPeerHandStatus(peer_id, peer_name, status);
             break;
     }
 }
@@ -3486,9 +3499,11 @@ function emitRoomStatus() {
  * @param {*} config
  */
 function handleRoomStatus(config) {
-    roomLocked = config.room_locked;
+    let peer_name = config.peer_name;
+    let room_locked = config.room_locked;
+    roomLocked = room_locked;
     lockUnlockRoomBtn.className = roomLocked ? 'fas fa-lock' : 'fas fa-lock-open';
-    userLog('toast', config.peer_name + ' set room is locked to ' + roomLocked);
+    userLog('toast', peer_name + ' set room is locked to ' + roomLocked);
 }
 
 /**
@@ -3522,25 +3537,29 @@ function roomIsLocked() {
  * @param {*} config
  */
 function handleWhiteboard(config) {
+    //
+    let peer_name = config.peer_name;
+    let act = config.act;
+
     if (isMobileDevice) return;
-    switch (config.act) {
+    switch (act) {
         case 'draw':
             drawRemote(config);
             break;
         case 'clean':
-            userLog('toast', config.peer_name + ' has cleaned the board');
+            userLog('toast', peer_name + ' has cleaned the board');
             whiteboardClean();
             break;
         case 'open':
-            userLog('toast', config.peer_name + ' has opened the board');
+            userLog('toast', peer_name + ' has opened the board');
             whiteboardOpen();
             break;
         case 'close':
-            userLog('toast', config.peer_name + ' has closed the board');
+            userLog('toast', peer_name + ' has closed the board');
             whiteboardClose();
             break;
         case 'resize':
-            userLog('toast', config.peer_name + ' has resized the board');
+            userLog('toast', peer_name + ' has resized the board');
             whiteboardResize();
             break;
     }
@@ -3692,16 +3711,15 @@ function draw(newx, newy, oldx, oldy) {
  * @param {*} config draw coordinates, color and size
  */
 function drawRemote(config) {
-    // draw on whiteboard
-    if (isWhiteboardVisible) {
-        ctx.strokeStyle = config.color;
-        ctx.lineWidth = config.size;
-        ctx.beginPath();
-        ctx.moveTo(config.prevx, config.prevy);
-        ctx.lineTo(config.newx, config.newy);
-        ctx.stroke();
-        ctx.closePath();
-    }
+    if (!isWhiteboardVisible) return;
+
+    ctx.strokeStyle = config.color;
+    ctx.lineWidth = config.size;
+    ctx.beginPath();
+    ctx.moveTo(config.prevx, config.prevy);
+    ctx.lineTo(config.newx, config.newy);
+    ctx.stroke();
+    ctx.closePath();
 }
 
 /**
@@ -3730,30 +3748,31 @@ function setupCanvas() {
     canvas.addEventListener('mousedown', (e) => {
         x = e.offsetX;
         y = e.offsetY;
-        isDrawing = 1;
+        isDrawing = true;
     });
     canvas.addEventListener('mousemove', (e) => {
-        if (isDrawing) {
-            draw(e.offsetX, e.offsetY, x, y);
-            // send draw to other peers in the room
-            if (thereIsPeerConnections()) {
-                signalingSocket.emit('wb', {
-                    peerConnections: peerConnections,
-                    act: 'draw',
-                    newx: e.offsetX,
-                    newy: e.offsetY,
-                    prevx: x,
-                    prevy: y,
-                    color: color,
-                    size: drawsize,
-                });
-            }
-            x = e.offsetX;
-            y = e.offsetY;
+        if (!isDrawing) return;
+
+        draw(e.offsetX, e.offsetY, x, y);
+        // send draw to other peers in the room
+        if (thereIsPeerConnections()) {
+            signalingSocket.emit('wb', {
+                peerConnections: peerConnections,
+                peer_name: myPeerName,
+                act: 'draw',
+                newx: e.offsetX,
+                newy: e.offsetY,
+                prevx: x,
+                prevy: y,
+                color: color,
+                size: drawsize,
+            });
         }
+        x = e.offsetX;
+        y = e.offsetY;
     });
-    window.addEventListener('mouseup', (e) => {
-        if (isDrawing) isDrawing = 0;
+    canvas.addEventListener('mouseup', (e) => {
+        if (isDrawing) isDrawing = false;
     });
 
     window.onresize = reportWindowSize;
@@ -3845,9 +3864,13 @@ function onFsError(event) {
     sendFileDiv.style.display = 'none';
     // Popup what wrong
     if (sendInProgress) {
-        console.error('onFsError', event);
+        console.error('onFsError sendInProgress', event);
         userLog('error', 'File Sharing ' + event.error);
         sendInProgress = false;
+    } else {
+        const errMessage = event.error.message;
+        if (errMessage.includes('closed')) return;
+        console.error('onFsError', event);
     }
 }
 
@@ -3922,6 +3945,7 @@ function abortFileTransfer() {
     if (fileReader && fileReader.readyState === 1) {
         fileReader.abort();
         sendFileDiv.style.display = 'none';
+        sendInProgress = false;
     }
 }
 
