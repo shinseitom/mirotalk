@@ -29,7 +29,6 @@ const signalingServerPort = 3000; // must be the same to server.js PORT
 const signalingServer = getSignalingServer();
 const roomId = getRoomId();
 const peerInfo = getPeerInfo();
-
 const peerLoockupUrl = 'https://extreme-ip-lookup.com/json/';
 const avatarApiUrl = 'https://eu.ui-avatars.com/api';
 const welcomeImg = '../images/image-placeholder.svg';
@@ -37,9 +36,11 @@ const shareUrlImg = '../images/image-placeholder.svg';
 const leaveRoomImg = '../images/leave-room.png';
 const confirmImg = '../images/image-placeholder.svg';
 const fileSharingImg = '../images/image-placeholder.svg';
+// nice free icon: https://www.iconfinder.com
 const roomLockedImg = '../images/locked.png';
 const camOffImg = '../images/cam-off.png';
 const audioOffImg = '../images/audio-off.png';
+const deleteImg = '../images/delete.png';
 const kickedOutImg = '../images/leave-room.png';
 const aboutImg = '../images/about.png';
 const notifyBySound = true; // turn on - off sound notifications
@@ -48,6 +49,8 @@ const fileSharingInput = '*'; // allow all file extensions
 const isWebRTCSupported = DetectRTC.isWebRTCSupported;
 const isMobileDevice = DetectRTC.isMobileDevice;
 const myBrowserName = DetectRTC.browser.name;
+
+let myPeerId;
 
 // video cam - screen max frame rate
 let videoMaxFrameRate = 30;
@@ -137,7 +140,6 @@ let msgerChat;
 let msgerEmojiBtn;
 let msgerInput;
 let msgerSendBtn;
-let chatDataChannelOpen = false;
 // chat room connected peers
 let msgerCP;
 let msgerCPHeader;
@@ -212,7 +214,6 @@ let sendFileInfo;
 let sendProgress;
 let sendAbortBtn;
 let sendInProgress = false;
-let fsDataChannelOpen = false;
 // MTU 1kb to prevent drop.
 const chunkSize = 1024;
 
@@ -546,7 +547,7 @@ function initClientPeer() {
     signalingSocket = io(signalingServer);
 
     signalingSocket.on('connect', handleConnect);
-    signalingSocket.on('roomIsLocked', roomIsLocked);
+    signalingSocket.on('roomIsLocked', handleRoomLocked);
     signalingSocket.on('roomStatus', handleRoomStatus);
     signalingSocket.on('addPeer', handleAddPeer);
     signalingSocket.on('sessionDescription', handleSessionDescription);
@@ -555,8 +556,9 @@ function initClientPeer() {
     signalingSocket.on('peerStatus', handlePeerStatus);
     signalingSocket.on('peerAction', handlePeerAction);
     signalingSocket.on('wb', handleWhiteboard);
-    signalingSocket.on('kickOut', kickedOut);
+    signalingSocket.on('kickOut', handleKickedOut);
     signalingSocket.on('fileInfo', handleFileInfo);
+    signalingSocket.on('fileAbort', handleFileAbort);
     signalingSocket.on('disconnect', handleDisconnect);
     signalingSocket.on('removePeer', handleRemovePeer);
 } // end [initClientPeer]
@@ -701,6 +703,8 @@ function handleAddPeer(config) {
     let should_create_offer = config.should_create_offer;
     let iceServers = config.iceServers;
 
+    myPeerId = peer_id;
+
     if (peer_id in peerConnections) {
         // This could happen if the user joins multiple channels where the other peer is also in.
         console.log('Already connected to peer', peer_id);
@@ -718,7 +722,7 @@ function handleAddPeer(config) {
     handleOnIceCandidate(peer_id);
     handleOnTrack(peer_id, peers);
     handleAddTracks(peer_id);
-    handleRTCDataChannel(peer_id);
+    handleRTCDataChannels(peer_id);
 
     if (should_create_offer) handleRtcOffer(peer_id);
 
@@ -752,7 +756,7 @@ function handleOnIceCandidate(peer_id) {
 function handleOnTrack(peer_id, peers) {
     let ontrackCount = 0;
     peerConnections[peer_id].ontrack = (event) => {
-        console.log('ontrack', event);
+        console.log('handleOnTrack', event);
         ontrackCount++;
         // 2 means audio + video
         if (ontrackCount === 2) loadRemoteMediaStream(event.streams[0], peers, peer_id);
@@ -779,22 +783,26 @@ function handleAddTracks(peer_id) {
  *
  * @param {*} peer_id
  */
-function handleRTCDataChannel(peer_id) {
+function handleRTCDataChannels(peer_id) {
     peerConnections[peer_id].ondatachannel = (event) => {
-        console.log('Datachannel event ' + peer_id, event);
+        console.log('handleRTCDataChannels ' + peer_id, event);
         event.channel.onmessage = (msg) => {
             switch (event.channel.label) {
                 case 'mirotalk_chat_channel':
-                    let dataMessage = {};
                     try {
-                        dataMessage = JSON.parse(msg.data);
+                        let dataMessage = JSON.parse(msg.data);
                         handleDataChannelChat(dataMessage);
                     } catch (err) {
-                        console.log(err);
+                        console.error('handleDataChannelChat', err);
                     }
                     break;
                 case 'mirotalk_file_sharing_channel':
-                    handleDataChannelFileSharing(msg.data);
+                    try {
+                        let dataFile = msg.data;
+                        handleDataChannelFileSharing(dataFile);
+                    } catch (err) {
+                        console.error('handleDataChannelFS', err);
+                    }
                     break;
             }
         };
@@ -1820,7 +1828,7 @@ function setMyWhiteboardBtn() {
  */
 function setMyFileShareBtn() {
     // make send file div draggable
-    dragElement(getId('sendFileDiv'), getId('imgShare'));
+    if (!isMobileDevice) dragElement(getId('sendFileDiv'), getId('imgShare'));
 
     fileShareBtn.addEventListener('click', (e) => {
         //window.open("https://fromsmash.com"); // for Big Data
@@ -1848,10 +1856,8 @@ function setMySettingsBtn() {
     myPeerNameSetBtn.addEventListener('click', (e) => {
         updateMyPeerName();
     });
-    if (!isMobileDevice) {
-        // make chat room draggable for desktop
-        dragElement(mySettings, mySettingsHeader);
-    }
+    // make chat room draggable for desktop
+    if (!isMobileDevice) dragElement(mySettings, mySettingsHeader);
 }
 
 /**
@@ -2593,39 +2599,70 @@ function startRecordingTime() {
 }
 
 /**
+ * Get MediaRecorder MimeTypes
+ * @returns mimeType
+ */
+function getSupportedMimeTypes() {
+    const possibleTypes = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=h264,opus',
+        'video/mp4;codecs=h264,aac',
+        'video/mp4',
+    ];
+    return possibleTypes.filter((mimeType) => {
+        return MediaRecorder.isTypeSupported(mimeType);
+    });
+}
+
+/**
  * Start Recording
  * https://github.com/webrtc/samples/tree/gh-pages/src/content/getusermedia/record
  */
 function startStreamRecording() {
     recordedBlobs = [];
-    let options = { mimeType: 'video/webm;codecs=vp9,opus' };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        console.error(`${options.mimeType} is not supported`);
-        options = { mimeType: 'video/webm;codecs=vp8,opus' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            console.error(`${options.mimeType} is not supported`);
-            options = { mimeType: 'video/webm' };
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                console.error(`${options.mimeType} is not supported`);
-                options = { mimeType: '' };
-            }
-        }
-    }
+
+    let options = getSupportedMimeTypes();
+    console.log('MediaRecorder options supported', options);
+    options = { mimeType: options[0] }; // select the first available as mimeType
 
     try {
         // record only my local Media Stream
         mediaRecorder = new MediaRecorder(localMediaStream, options);
+        console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
+        mediaRecorder.start();
     } catch (err) {
-        console.error('Exception while creating MediaRecorder:', err);
+        console.error('Exception while creating MediaRecorder: ', err);
         userLog('error', "Can't start stream recording: " + err);
         return;
     }
 
-    console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
+    mediaRecorder.onstart = (event) => {
+        console.log('MediaRecorder started: ', event);
+        isStreamRecording = true;
+        recordStreamBtn.style.setProperty('background-color', 'red');
+        startRecordingTime();
+        disableElements(true);
+        // only for desktop
+        if (!isMobileDevice) {
+            tippy(recordStreamBtn, {
+                content: 'STOP recording',
+                placement: 'right-start',
+            });
+        }
+    };
+
+    mediaRecorder.ondataavailable = (event) => {
+        console.log('MediaRecorder data: ', event);
+        if (event.data && event.data.size > 0) recordedBlobs.push(event.data);
+    };
+
     mediaRecorder.onstop = (event) => {
         console.log('MediaRecorder stopped: ', event);
         console.log('MediaRecorder Blobs: ', recordedBlobs);
         myVideoParagraph.innerHTML = myPeerName + ' (me)';
+        isStreamRecording = false;
+        setRecordButtonUi();
         disableElements(false);
         downloadRecordedStream();
         // only for desktop
@@ -2636,21 +2673,6 @@ function startStreamRecording() {
             });
         }
     };
-
-    mediaRecorder.ondataavailable = handleDataAvailable;
-    mediaRecorder.start();
-    console.log('MediaRecorder started', mediaRecorder);
-    isStreamRecording = true;
-    recordStreamBtn.style.setProperty('background-color', 'red');
-    startRecordingTime();
-    disableElements(true);
-    // only for desktop
-    if (!isMobileDevice) {
-        tippy(recordStreamBtn, {
-            content: 'STOP recording',
-            placement: 'right-start',
-        });
-    }
 }
 
 /**
@@ -2658,28 +2680,14 @@ function startStreamRecording() {
  */
 function stopStreamRecording() {
     mediaRecorder.stop();
-    isStreamRecording = false;
-    setRecordButtonUi();
 }
 
 /**
  * Set Record Button UI on change theme
  */
 function setRecordButtonUi() {
-    if (mirotalkTheme == 'ghost') {
-        recordStreamBtn.style.setProperty('background-color', 'transparent');
-    } else {
-        recordStreamBtn.style.setProperty('background-color', 'white');
-    }
-}
-
-/**
- * recordind stream data
- * @param {*} event
- */
-function handleDataAvailable(event) {
-    console.log('handleDataAvailable', event);
-    if (event.data && event.data.size > 0) recordedBlobs.push(event.data);
+    recordStreamBtn.style.setProperty('background-color', 'white');
+    if (mirotalkTheme == 'ghost') recordStreamBtn.style.setProperty('background-color', 'transparent');
 }
 
 /**
@@ -2687,8 +2695,9 @@ function handleDataAvailable(event) {
  */
 function downloadRecordedStream() {
     try {
-        const blob = new Blob(recordedBlobs, { type: 'video/webm' });
-        const recFileName = getDataTimeString() + '-REC.webm';
+        const type = recordedBlobs[0].type.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(recordedBlobs, { type: 'video/' + type });
+        const recFileName = getDataTimeString() + '-REC.' + type;
         const currentDevice = isMobileDevice ? 'MOBILE' : 'PC';
         const blobFileSize = bytesToSize(blob.size);
 
@@ -2702,18 +2711,7 @@ function downloadRecordedStream() {
             </div>`,
         );
 
-        // save the recorded file to device
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = recFileName;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }, 100);
+        saveFileFromBlob(blob, recFileName);
     } catch (err) {
         userLog('error', 'Recording save failed: ' + err);
     }
@@ -2741,34 +2739,7 @@ function disableElements(b) {
  */
 function createChatDataChannel(peer_id) {
     chatDataChannels[peer_id] = peerConnections[peer_id].createDataChannel('mirotalk_chat_channel');
-    chatDataChannels[peer_id].addEventListener('open', onChatChannelStateChange);
-    chatDataChannels[peer_id].addEventListener('close', onChatChannelStateChange);
-    chatDataChannels[peer_id].addEventListener('error', onChatError);
-}
-
-/**
- * Handle Chat Room channel state
- * @param {*} event
- */
-function onChatChannelStateChange(event) {
-    console.log('onChatChannelStateChange', event.type);
-    if (event.type === 'close') {
-        chatDataChannelOpen = false;
-        return;
-    }
-    chatDataChannelOpen = true;
-}
-
-/**
- * Something wrong on Chat Data Channel
- * @param {*} event
- */
-function onChatError(event) {
-    const errMessage = event.error.message;
-    // Transport channel closed ignore it...
-    if (errMessage.includes('closed')) return;
-    console.error('onChatError', event);
-    userLog('error', 'Chat data channel error: ' + errMessage);
+    console.log('chatDataChannels created', chatDataChannels);
 }
 
 /**
@@ -2815,7 +2786,7 @@ function cleanMessages() {
         background: swalBackground,
         position: 'center',
         title: 'Clean up chat Messages?',
-        icon: 'warning',
+        imageUrl: deleteImg,
         showDenyButton: true,
         confirmButtonText: `Yes`,
         denyButtonText: `No`,
@@ -2834,7 +2805,7 @@ function cleanMessages() {
                 msgs = msgerChat.firstChild;
             }
             // clean object
-            chatMessages = [];
+            chatMenpssages = [];
         }
     });
 }
@@ -2862,44 +2833,44 @@ function hideChatRoomAndEmojiPicker() {
  */
 function sendChatMessage() {
     if (!thereIsPeerConnections()) {
-        userLog('info', "Can't send message, no peer connection detected");
+        userLog('info', "Can't send message, no participants in the room");
         msgerInput.value = '';
         return;
     }
 
     const msg = msgerInput.value;
-    // empity msg or chat data ch. not opened
-    if (!msg || !chatDataChannelOpen) return;
+    // empity msg or
+    if (!msg) return;
 
-    emitMsg(myPeerName, 'toAll', msg, false, '');
+    emitMsg(myPeerName, 'toAll', msg, false);
     appendMessage(myPeerName, rightChatAvatar, 'right', msg, false);
     msgerInput.value = '';
 }
 
 /**
  * handle Incoming Data Channel Chat Messages
- * @param {*} dataMessages
+ * @param {*} dataMessage
  */
-function handleDataChannelChat(dataMessages) {
-    switch (dataMessages.type) {
-        case 'chat':
-            // private message but not for me return
-            if (dataMessages.privateMsg && dataMessages.toName != myPeerName) return;
-            // log incoming dataMessages json
-            console.log('handleDataChannelChat', dataMessages);
-            // chat message for me also
-            if (!isChatRoomVisible) {
-                showChatRoomDraggable();
-                chatRoomBtn.className = 'fas fa-comment-slash';
-            }
-            playSound('chatMessage');
-            setPeerChatAvatarImgName('left', dataMessages.name);
-            appendMessage(dataMessages.name, leftChatAvatar, 'left', dataMessages.msg, dataMessages.privateMsg);
-            break;
-        // .........
-        default:
-            break;
+function handleDataChannelChat(dataMessage) {
+    if (!dataMessage) return;
+
+    let msgFrom = dataMessage.from;
+    let msgTo = dataMessage.to;
+    let msg = dataMessage.msg;
+    let msgPrivate = dataMessage.privateMsg;
+
+    // private message but not for me return
+    if (msgPrivate && msgTo != myPeerName) return;
+
+    console.log('handleDataChannelChat', dataMessage);
+    // chat message for me also
+    if (!isChatRoomVisible) {
+        showChatRoomDraggable();
+        chatRoomBtn.className = 'fas fa-comment-slash';
     }
+    playSound('chatMessage');
+    setPeerChatAvatarImgName('left', msgFrom);
+    appendMessage(msgFrom, leftChatAvatar, 'left', msg, msgPrivate);
 }
 
 /**
@@ -2912,36 +2883,36 @@ function escapeSpecialChars(regex) {
 
 /**
  * Append Message to msger chat room
- * @param {*} name
+ * @param {*} from
  * @param {*} img
  * @param {*} side
- * @param {*} text
+ * @param {*} msg
  * @param {*} privateMsg
  */
-function appendMessage(name, img, side, text, privateMsg) {
+function appendMessage(from, img, side, msg, privateMsg) {
     let time = getFormatDate(new Date());
     // collect chat msges to save it later
     chatMessages.push({
         time: time,
-        name: name,
-        text: text,
-        private_msg: privateMsg,
+        from: from,
+        msg: msg,
+        privateMsg: privateMsg,
     });
 
     // check if i receive a private message
     let msgBubble = privateMsg ? 'private-msg-bubble' : 'msg-bubble';
 
     // console.log("chatMessages", chatMessages);
-    let ctext = detectUrl(text);
+    let cMsg = detectUrl(msg);
     const msgHTML = `
 	<div class="msg ${side}-msg">
 		<div class="msg-img" style="background-image: url('${img}')"></div>
 		<div class=${msgBubble}>
             <div class="msg-info">
-                <div class="msg-info-name">${name}</div>
+                <div class="msg-info-name">${from}</div>
                 <div class="msg-info-time">${time}</div>
             </div>
-            <div class="msg-text">${ctext}</div>
+            <div class="msg-text">${cMsg}</div>
         </div>
 	</div>
     `;
@@ -2979,7 +2950,7 @@ function msgerAddPeers(peers) {
 
                 let msgerPrivateMsgInput = getId(peer_id + '_pMsgInput');
                 let msgerPrivateBtn = getId(peer_id + '_pMsgBtn');
-                addMsgerPrivateBtn(msgerPrivateBtn, msgerPrivateMsgInput, peer_id);
+                addMsgerPrivateBtn(msgerPrivateBtn, msgerPrivateMsgInput);
             }
         }
     }
@@ -3021,17 +2992,15 @@ function msgerRemovePeer(peer_id) {
  * Setup msger buttons to send private messages
  * @param {*} msgerPrivateBtn
  * @param {*} msgerPrivateMsgInput
- * @param {*} peer_id
  */
-function addMsgerPrivateBtn(msgerPrivateBtn, msgerPrivateMsgInput, peer_id) {
+function addMsgerPrivateBtn(msgerPrivateBtn, msgerPrivateMsgInput) {
     // add button to send private messages
     msgerPrivateBtn.addEventListener('click', (e) => {
         e.preventDefault();
         let pMsg = msgerPrivateMsgInput.value;
         if (!pMsg) return;
         let toPeerName = msgerPrivateBtn.value;
-        // userLog("info", toPeerName + ":" + peer_id);
-        emitMsg(myPeerName, toPeerName, pMsg, true, peer_id);
+        emitMsg(myPeerName, toPeerName, pMsg, true);
         appendMessage(myPeerName, rightChatAvatar, 'right', pMsg + '<br/><hr>Private message to ' + toPeerName, true);
         msgerPrivateMsgInput.value = '';
         msgerCP.style.display = 'none';
@@ -3072,26 +3041,27 @@ function getFormatDate(date) {
 
 /**
  * Send message over Secure dataChannels
- * otherwise over signaling server
- * @param {*} name
- * @param {*} toName
+ * @param {*} from
+ * @param {*} to
  * @param {*} msg
- * @param {*} privateMsg private message true/false
- * @param {*} peer_id to sent private message
+ * @param {*} privateMsg true/false
  */
-function emitMsg(name, toName, msg, privateMsg, peer_id) {
+function emitMsg(from, to, msg, privateMsg) {
     if (!msg) return;
 
-    const chatMessage = {
-        type: 'chat',
-        name: name,
-        toName: toName,
+    let chatMessage = {
+        from: from,
+        to: to,
         msg: msg,
         privateMsg: privateMsg,
     };
-    // peer to peer over DataChannels
-    Object.keys(chatDataChannels).map((peerId) => chatDataChannels[peerId].send(JSON.stringify(chatMessage)));
     console.log('Send msg', chatMessage);
+
+    // Send chat msg through RTC Data Channels
+    for (let peer_id in chatDataChannels) {
+        if (chatDataChannels[peer_id].readyState === 'open')
+            chatDataChannels[peer_id].send(JSON.stringify(chatMessage));
+    }
 }
 
 /**
@@ -3180,8 +3150,8 @@ function updateMyPeerName() {
     myVideoParagraph.innerHTML = myPeerName + ' (me)';
 
     signalingSocket.emit('peerName', {
-        peerConnections: peerConnections,
         room_id: roomId,
+        peer_id: myPeerId,
         peer_name_old: myOldPeerName,
         peer_name_new: myPeerName,
     });
@@ -3220,8 +3190,8 @@ function handlePeerName(config) {
  */
 function emitPeerStatus(element, status) {
     signalingSocket.emit('peerStatus', {
-        peerConnections: peerConnections,
         room_id: roomId,
+        peer_id: myPeerId,
         peer_name: myPeerName,
         element: element,
         status: status,
@@ -3371,8 +3341,8 @@ function setPeerVideoStatus(peer_id, status) {
  */
 function emitPeerAction(peerAction) {
     signalingSocket.emit('peerAction', {
-        peerConnections: peerConnections,
         room_id: roomId,
+        peer_id: myPeerId,
         peer_name: myPeerName,
         peer_action: peerAction,
     });
@@ -3487,8 +3457,8 @@ function emitRoomStatus() {
     userLog('toast', rStatus);
 
     signalingSocket.emit('roomStatus', {
-        peerConnections: peerConnections,
         room_id: roomId,
+        peer_id: myPeerId,
         room_locked: roomLocked,
         peer_name: myPeerName,
     });
@@ -3509,7 +3479,7 @@ function handleRoomStatus(config) {
 /**
  * Room is Locked can't access...
  */
-function roomIsLocked() {
+function handleRoomLocked() {
     playSound('kickedOut');
 
     Swal.fire({
@@ -3757,7 +3727,7 @@ function setupCanvas() {
         // send draw to other peers in the room
         if (thereIsPeerConnections()) {
             signalingSocket.emit('wb', {
-                peerConnections: peerConnections,
+                peer_id: myPeerId,
                 peer_name: myPeerName,
                 act: 'draw',
                 newx: e.offsetX,
@@ -3797,7 +3767,7 @@ function saveWbCanvas() {
 function remoteWbAction(action) {
     if (thereIsPeerConnections()) {
         signalingSocket.emit('wb', {
-            peerConnections: peerConnections,
+            peer_id: myPeerId,
             peer_name: myPeerName,
             act: action,
         });
@@ -3811,9 +3781,7 @@ function remoteWbAction(action) {
 function createFileSharingDataChannel(peer_id) {
     fileDataChannels[peer_id] = peerConnections[peer_id].createDataChannel('mirotalk_file_sharing_channel');
     fileDataChannels[peer_id].binaryType = 'arraybuffer';
-    fileDataChannels[peer_id].addEventListener('open', onFSChannelStateChange);
-    fileDataChannels[peer_id].addEventListener('close', onFSChannelStateChange);
-    fileDataChannels[peer_id].addEventListener('error', onFsError);
+    console.log('fileDataChannels created', fileDataChannels);
 }
 
 /**
@@ -3831,46 +3799,6 @@ function handleDataChannelFileSharing(data) {
         incomingFileData = receiveBuffer;
         receiveBuffer = [];
         endDownload();
-    }
-}
-
-/**
- * Handle File Sharing data channel state
- * @param {*} event
- */
-function onFSChannelStateChange(event) {
-    console.log('onFSChannelStateChange', event.type);
-    if (event.type === 'close') {
-        if (sendInProgress) {
-            userLog('error', 'File Sharing channel closed');
-            sendFileDiv.style.display = 'none';
-            sendInProgress = false;
-        }
-        fsDataChannelOpen = false;
-        return;
-    }
-    fsDataChannelOpen = true;
-}
-
-/**
- * Handle File sharing data channel error
- * @param {*} event
- */
-function onFsError(event) {
-    // cleanup
-    receiveBuffer = [];
-    incomingFileData = [];
-    receivedSize = 0;
-    sendFileDiv.style.display = 'none';
-    // Popup what wrong
-    if (sendInProgress) {
-        console.error('onFsError sendInProgress', event);
-        userLog('error', 'File Sharing ' + event.error);
-        sendInProgress = false;
-    } else {
-        const errMessage = event.error.message;
-        if (errMessage.includes('closed')) return;
-        console.error('onFsError', event);
     }
 }
 
@@ -3903,7 +3831,7 @@ function sendFileData() {
     fileReader.addEventListener('error', (err) => console.error('fileReader error', err));
     fileReader.addEventListener('abort', (e) => console.log('fileReader aborted', e));
     fileReader.addEventListener('load', (e) => {
-        if (!sendInProgress || !fsDataChannelOpen) return;
+        if (!sendInProgress) return;
 
         // peer to peer over DataChannels
         sendFSData(e.target.result);
@@ -3929,7 +3857,7 @@ function sendFileData() {
 }
 
 /**
- * Send Data if channel open
+ * Send File through RTC Data Channels
  * @param {*} data fileReader e.target.result
  */
 function sendFSData(data) {
@@ -3946,7 +3874,23 @@ function abortFileTransfer() {
         fileReader.abort();
         sendFileDiv.style.display = 'none';
         sendInProgress = false;
+        signalingSocket.emit('fileAbort', {
+            room_id: roomId,
+            peer_id: myPeerId,
+            peer_name: myPeerName,
+        });
     }
+}
+
+/**
+ * File Transfer aborted by peer
+ */
+function handleFileAbort() {
+    receiveBuffer = [];
+    incomingFileData = [];
+    receivedSize = 0;
+    console.log('File transfer aborted');
+    userLog('toast', '⚠️ File transfer aborted');
 }
 
 /**
@@ -3985,16 +3929,11 @@ function selectFileToShare() {
                     userLog('info', 'No participants detected');
                     return;
                 }
-                // something wrong channel not open
-                if (!fsDataChannelOpen) {
-                    userLog('error', 'Unable to Sharing the file, DataChannel seems closed.');
-                    return;
-                }
                 // send some metadata about our file to peers in the room
                 signalingSocket.emit('fileInfo', {
-                    peerConnections: peerConnections,
-                    peer_name: myPeerName,
                     room_id: roomId,
+                    peer_id: myPeerId,
+                    peer_name: myPeerName,
                     file: {
                         fileName: fileToSend.name,
                         fileSize: fileToSend.size,
@@ -4022,10 +3961,15 @@ function handleFileInfo(config) {
     receiveBuffer = [];
     receivedSize = 0;
     let fileToReceiveInfo =
-        'incoming file: ' +
+        ' From: ' +
+        incomingFileInfo.peerName +
+        '\n' +
+        ' incoming file: ' +
         incomingFileInfo.fileName +
+        '\n' +
         ' size: ' +
         bytesToSize(incomingFileInfo.fileSize) +
+        '\n' +
         ' type: ' +
         incomingFileInfo.fileType;
     console.log(fileToReceiveInfo);
@@ -4041,6 +3985,8 @@ function endDownload() {
 
     // save received file into Blob
     const blob = new Blob(incomingFileData);
+    const file = incomingFileInfo.fileName;
+
     incomingFileData = [];
 
     // if file is image, show the preview
@@ -4065,7 +4011,7 @@ function endDownload() {
                     popup: 'animate__animated animate__fadeOutUp',
                 },
             }).then((result) => {
-                if (result.isConfirmed) saveFileFromBlob();
+                if (result.isConfirmed) saveFileFromBlob(blob, file);
             });
         };
         // blob where is stored downloaded file
@@ -4090,24 +4036,29 @@ function endDownload() {
                 popup: 'animate__animated animate__fadeOutUp',
             },
         }).then((result) => {
-            if (result.isConfirmed) saveFileFromBlob();
+            if (result.isConfirmed) saveFileFromBlob(blob, file);
         });
     }
+}
 
-    // save to PC / Mobile devices
-    function saveFileFromBlob() {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = incomingFileInfo.fileName;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }, 100);
-    }
+/**
+ * Save to PC / Mobile devices
+ * https://developer.mozilla.org/en-US/docs/Web/API/Blob
+ * @param {*} blob
+ * @param {*} file
+ */
+function saveFileFromBlob(blob, file) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = file;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }, 100);
 }
 
 /**
@@ -4161,7 +4112,7 @@ function kickOut(peer_id, peerKickOutBtn) {
  * You will be kicked out from the room and popup the peer name that performed this action
  * @param {*} config
  */
-function kickedOut(config) {
+function handleKickedOut(config) {
     let peer_name = config.peer_name;
 
     playSound('kickedOut');
@@ -4173,7 +4124,7 @@ function kickedOut(config) {
         background: swalBackground,
         position: 'center',
         imageUrl: kickedOutImg,
-        title: 'You will be kicked out!',
+        title: 'Kicked out!',
         html:
             `<h2 style="color: red;">` +
             `User ` +
@@ -4187,9 +4138,7 @@ function kickedOut(config) {
                 const content = Swal.getHtmlContainer();
                 if (content) {
                     const b = content.querySelector('b');
-                    if (b) {
-                        b.textContent = Swal.getTimerLeft();
-                    }
+                    if (b) b.textContent = Swal.getTimerLeft();
                 }
             }, 100);
         },
