@@ -6,19 +6,19 @@
 
 [//]: https://img.shields.io/badge/<LABEL>-<MESSAGE>-<COLOR>
 
-**`miroslavpejic85`** [![Author](https://img.shields.io/badge/Author-miro-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101/)
-![License: CC-NC](https://img.shields.io/badge/License-AGPLv3-blue.svg)
+**`miroslavpejic85`** [![Author](https://img.shields.io/badge/Author-Miroslav-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101/)
+![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)
 [![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/miroslavpejic85/mirotalk)
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?)](https://github.com/prettier/prettier)
+[![Code style: prettier](https://img.shields.io/badge/Code_style-Prettier-ff69b4.svg?)](https://github.com/prettier/prettier)
 [![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![Discord](https://img.shields.io/badge/chat-discord-green)](https://discord.gg/TAeWXJCvBr)
+[![Discord](https://img.shields.io/badge/Chat-Discord-green)](https://discord.gg/TAeWXJCvBr)
 
 **`mmguero`** [![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/mmguero/mirotalk)
 [![Docker](https://img.shields.io/docker/pulls/mmguero/mirotalk)](https://hub.docker.com/r/mmguero/mirotalk)
 
 Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn. `MiroTalk` provides video quality and latency not available with traditional technology.
 
-Open the app in one of following **supported browsers**
+Open the app with the following **supported browsers** & many more...
 
 [//]: #![webrtc](www/images/webrtc.png)
 
@@ -90,20 +90,18 @@ npm start
 
 ## Docker
 
-Install: https://docs.docker.com/compose/install/
-
 ```bash
 # copy .env.template to .env
 cp .env.template .env
 
 # build or rebuild services
-docker-compose build
+docker compose build
 
 # create and start containers
-docker-compose up # -d
+docker compose up # -d
 
 # stop and remove resources
-docker-compose down
+docker compose down
 ```
 
 -   Open http://localhost:3000 in browser
@@ -126,7 +124,7 @@ The API documentation uses [swagger](https://swagger.io/) at http://localhost:30
 
 ---
 
-If you want `MiroTalk` to be `reachable` from the `outside` of your local network, you can use a service like [ngrok](https://ngrok.com/) (by editing the `Ngrok` part on `.env` file) or deploy it on:
+If you want `MiroTalk` to be `reachable` from the `outside` of your local network, you can use a service like [ngrok](https://ngrok.com/) (by editing the `Ngrok` part on `.env` file) or expose it directly on [https](ssl/README.md) or deploy it on:
 
 <br>
 
@@ -160,8 +158,8 @@ From where I took inspiration for this project. ❤️
 
 ## Contributing
 
--   Pull Requests are welcome! :slightly_smiling_face:
--   Please run [prettier](https://prettier.io) on all of your PRs before submitting, this can be done with `npx prettier --write .`
+-   Pull Requests are very welcome! :slightly_smiling_face:
+-   Just run [prettier](https://prettier.io) on all of your PRs before submitting, this can be done with `npx prettier --write .`
 -   For communication we use [gitter](https://gitter.im/) or [discord](https://discord.com/) chats which can be found here:
 
 [![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Discord](https://img.shields.io/badge/chat-discord-green)](https://discord.gg/TAeWXJCvBr)

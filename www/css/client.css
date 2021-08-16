@@ -54,6 +54,9 @@
     /* btns hover scale 110% zoom */
     --btns-hover-scale: scale(1.1);
 
+    /* video elem border color */
+    --elem-border-color: grey 1px solid;
+
     /* neon theme default */
     --body-bg: black;
     --msger-bg: black;
@@ -144,6 +147,8 @@
 
 * {
     outline: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
+        'Helvetica Neue', sans-serif;
 }
 
 /*--------------------------------------------------------------
@@ -151,10 +156,8 @@
 --------------------------------------------------------------*/
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-        'Helvetica Neue', sans-serif;
     background: var(--body-bg);
-    background-image: url('../images/illustration-section-01.svg');
+    background-image: url('../images/bg.svg');
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;
@@ -249,15 +252,14 @@ body {
     display: none;
     position: absolute;
     padding: 10px;
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 5px;
+    background-color: rgba(61, 61, 61, 0.7);
     font-size: small; /* 4 mobile */
     font-weight: bold;
     text-align: center;
     width: 100%;
     cursor: default;
     /* center */
-    top: 22px;
+    top: 18px;
     left: 50%;
     transform: translate(-50%, -50%);
     -webkit-transform: translate(-50%, -50%);
@@ -672,6 +674,16 @@ body {
     overflow: hidden;
 }
 
+#msgerCPChat {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--msger-bg);
+}
+
+#msgerCPList {
+    border: grey 1px solid;
+}
+
 #msgerCPList button {
     border: none;
     font-size: 1rem;
@@ -689,7 +701,7 @@ body {
 }
 
 #searchPeerBarName {
-    width: 94%;
+    width: 94.5%;
     padding: 10px;
     font-size: 1rem;
     background-color: transparent;
@@ -718,12 +730,9 @@ body {
 #msgerEmojiPicker {
     z-index: 13;
     display: none;
-    box-shadow: var(--box-shadow);
-    /* center */
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    width: var(--msger-width);
+    height: var(--msger-height);
     /* fade in */
     -webkit-animation: fadeIn ease-in 1;
     -moz-animation: fadeIn ease-in 1;
@@ -737,29 +746,9 @@ body {
     overflow: hidden;
 }
 
-#msgerEmojiHeader {
-    background: rgb(0, 0, 0);
-    cursor: move;
-}
-
-#msgerCloseEmojiBtn {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    background: rgb(0, 0, 0);
-    border: none;
-    color: #fff;
-    font-size: 1.2rem;
-    transition: all 0.3s ease-in-out;
-}
-
-#msgerCloseEmojiBtn:hover {
-    color: rgb(0, 180, 50);
-    transform: var(--btns-hover-scale);
-    transition: all 0.3s ease-in-out;
-}
-
 emoji-picker {
+    width: 100%;
+    height: 100%;
     --num-columns: 9;
     --emoji-size: 1.5rem;
     --background: var(--msger-bg);
@@ -775,10 +764,11 @@ video {
     width: 100%;
     height: 100%;
     object-fit: var(--video-object-fit);
-    border: 5px solid transparent;
+    cursor: pointer;
 }
 video:fullscreen {
-    object-fit: contain;
+    object-fit: contain; /* cover; */
+    border: var(--elem-border-color);
 }
 .video {
     float: left;
@@ -792,31 +782,36 @@ video:fullscreen {
     height: 100vh;
 }
 .video.two {
-    width: 50vw;
-    height: 100vh;
+    width: 49.6vw;
+    height: 99vh;
     --video-object-fit: cover;
+    border: var(--elem-border-color);
     /* --video-object-fit: contain; */
 }
 .video.three {
-    /* width: 33.33vw;
-  height: 100vh; */
-    width: 50vw;
+    /* width: 33vw;
+  height: 99vh; */
+    width: 49.6vw;
     --video-object-fit: cover;
+    border: var(--elem-border-color);
 }
 .video.four {
-    width: 50vw;
-    height: 50vh;
+    width: 49.6vw;
+    height: 49vh;
     --video-object-fit: cover;
+    border: var(--elem-border-color);
 }
 .video.five {
-    width: 33.33vw;
-    height: 50vh;
+    width: 33vw;
+    height: 49vh;
     --video-object-fit: cover;
+    border: var(--elem-border-color);
 }
 .video.six {
-    width: 33.33vw;
-    height: 50vh;
+    width: 33vw;
+    height: 49vh;
     --video-object-fit: cover;
+    border: var(--elem-border-color);
 }
 
 /*--------------------------------------------------------------
@@ -832,24 +827,28 @@ video:fullscreen {
         overflow: hidden;
     }
     .video.two {
-        width: 100vw;
-        height: 50vh;
+        width: 99vw;
+        height: 49vh;
         --video-object-fit: cover;
+        border: var(--elem-border-color);
     }
     .video.three {
-        width: 100vw;
-        height: 33.33vh;
+        width: 99vw;
+        height: 33vh;
         --video-object-fit: cover;
+        border: var(--elem-border-color);
     }
     .video.five {
-        width: 50vw;
-        height: 33.33vh;
+        width: 49.6vw;
+        height: 33vh;
         --video-object-fit: cover;
+        border: var(--elem-border-color);
     }
     .video.six {
-        width: 50vw;
-        height: 33.33vh;
+        width: 49.6vw;
+        height: 33vh;
         --video-object-fit: cover;
+        border: var(--elem-border-color);
     }
 }
 
