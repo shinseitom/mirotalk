@@ -1948,7 +1948,7 @@ function setMySettingsBtn() {
  */
 function setAboutBtn() {
     aboutBtn.addEventListener('click', (e) => {
-        getAbout();
+        showAbout();
     });
 }
 
@@ -2979,7 +2979,7 @@ function cleanMessages() {
                 msgs = msgerChat.firstChild;
             }
             // clean object
-            chatMenpssages = [];
+            chatMessages = [];
         }
     });
 }
@@ -4594,7 +4594,7 @@ function handleKickedOut(config) {
 /**
  * MiroTalk about info
  */
-function getAbout() {
+function showAbout() {
     playSound('newMessage');
 
     Swal.fire({
@@ -4606,7 +4606,7 @@ function getAbout() {
         html: `
         <br/>
         <div id="about">
-            <b>Open Source</b> fork on
+            <b>Open Source</b> project on
             <a href="https://github.com/mmguero/mirotalk" target="_blank"><br/></br>
             <img alt="mirotalk github" src="../images/github.png"></a>
         </div>
