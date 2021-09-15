@@ -66,6 +66,7 @@ let callElapsedTime;
 let recStartTime;
 let recElapsedTime;
 let mirotalkTheme = 'neon'; // neon - dark - forest - ghost ...
+let mirotalkBtnsBar = 'vertical'; // vertical - horizontal
 let swalBackground = 'rgba(0, 0, 0, 0.7)'; // black - #16171b - transparent ...
 let peerGeo;
 let peerConnection;
@@ -88,6 +89,7 @@ let isDocumentOnFullScreen = false;
 let isWhiteboardFs = false;
 let isVideoUrlPlayerOpen = false;
 let isRecScreenSream = false;
+let isGameOpen = false;
 let signalingSocket; // socket.io connection to our webserver
 let localMediaStream; // my microphone / webcam
 let remoteMediaStream; // peers microphone / webcam
@@ -117,8 +119,8 @@ let countTime;
 // init audio-video
 let initAudioBtn;
 let initVideoBtn;
-// left buttons
-let leftButtons;
+// buttons bar
+let buttonsBar;
 let shareRoomBtn;
 let audioBtn;
 let videoBtn;
@@ -130,6 +132,7 @@ let chatRoomBtn;
 let myHandBtn;
 let whiteboardBtn;
 let fileShareBtn;
+let gameBtn;
 let mySettingsBtn;
 let aboutBtn;
 let leaveRoomBtn;
@@ -159,7 +162,7 @@ let mySettingsHeader;
 let tabDevicesBtn;
 let tabBandwidthBtn;
 let tabRoomBtn;
-let tabThemeBtn;
+let tabStylingBtn;
 let mySettingsCloseBtn;
 let myPeerNameSet;
 let myPeerNameSetBtn;
@@ -170,6 +173,7 @@ let videoQualitySelect;
 let videoFpsSelect;
 let screenFpsSelect;
 let themeSelect;
+let btnsBarSelect;
 let selectors;
 // my video element
 let myVideo;
@@ -219,12 +223,18 @@ let sendProgress;
 let sendAbortBtn;
 let sendInProgress = false;
 // MTU 1kb to prevent drop.
-const chunkSize = 1024;
+// const chunkSize = 1024;
+const chunkSize = 1024 * 16; // 16kb/s
 // video URL player
 let videoUrlCont;
 let videoUrlHeader;
 let videoUrlCloseBtn;
 let videoUrlIframe;
+// game player
+let gameCont;
+let gameHeader;
+let gameCloseBtn;
+let gameIframe;
 
 /**
  * Load all Html elements by Id
@@ -235,8 +245,8 @@ function getHtmlElementsById() {
     myVideo = getId('myVideo');
     myVideoWrap = getId('myVideoWrap');
     myVideoAvatarImage = getId('myVideoAvatarImage');
-    // left buttons
-    leftButtons = getId('leftButtons');
+    // buttons Bar
+    buttonsBar = getId('buttonsBar');
     shareRoomBtn = getId('shareRoomBtn');
     audioBtn = getId('audioBtn');
     videoBtn = getId('videoBtn');
@@ -247,6 +257,7 @@ function getHtmlElementsById() {
     chatRoomBtn = getId('chatRoomBtn');
     whiteboardBtn = getId('whiteboardBtn');
     fileShareBtn = getId('fileShareBtn');
+    gameBtn = getId('gameBtn');
     myHandBtn = getId('myHandBtn');
     mySettingsBtn = getId('mySettingsBtn');
     aboutBtn = getId('aboutBtn');
@@ -277,7 +288,7 @@ function getHtmlElementsById() {
     tabDevicesBtn = getId('tabDevicesBtn');
     tabBandwidthBtn = getId('tabBandwidthBtn');
     tabRoomBtn = getId('tabRoomBtn');
-    tabThemeBtn = getId('tabThemeBtn');
+    tabStylingBtn = getId('tabStylingBtn');
     mySettingsCloseBtn = getId('mySettingsCloseBtn');
     myPeerNameSet = getId('myPeerNameSet');
     myPeerNameSetBtn = getId('myPeerNameSetBtn');
@@ -288,6 +299,7 @@ function getHtmlElementsById() {
     videoFpsSelect = getId('videoFps');
     screenFpsSelect = getId('screenFps');
     themeSelect = getId('mirotalkTheme');
+    btnsBarSelect = getId('mirotalkBtnsBar');
     // my conference name, hand, video - audio status
     myVideoParagraph = getId('myVideoParagraph');
     myHandStatusIcon = getId('myHandStatusIcon');
@@ -318,6 +330,11 @@ function getHtmlElementsById() {
     videoUrlHeader = getId('videoUrlHeader');
     videoUrlCloseBtn = getId('videoUrlCloseBtn');
     videoUrlIframe = getId('videoUrlIframe');
+    // game player
+    gameCont = getId('gameCont');
+    gameHeader = getId('gameHeader');
+    gameCloseBtn = getId('gameCloseBtn');
+    gameIframe = getId('gameIframe');
 }
 
 /**
@@ -367,6 +384,10 @@ function setButtonsTitle() {
     });
     tippy(fileShareBtn, {
         content: 'SHARE the file',
+        placement: 'right-start',
+    });
+    tippy(gameBtn, {
+        content: 'START a game',
         placement: 'right-start',
     });
     tippy(mySettingsBtn, {
@@ -461,6 +482,11 @@ function setButtonsTitle() {
     });
     tippy(msgerVideoUrlBtn, {
         content: 'Share YouTube video to all participants',
+    });
+
+    // game player
+    tippy(gameCloseBtn, {
+        content: 'Close the game',
     });
 }
 
@@ -1021,8 +1047,8 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--wb-hbg', '#000000');
             document.documentElement.style.setProperty('--btn-bg', 'white');
             document.documentElement.style.setProperty('--btn-color', 'black');
-            document.documentElement.style.setProperty('--btn-opc', '1');
             document.documentElement.style.setProperty('--btns-left', '20px');
+            document.documentElement.style.setProperty('--btn-opc', '1');
             document.documentElement.style.setProperty('--my-settings-label-color', 'limegreen');
             document.documentElement.style.setProperty('--box-shadow', '3px 3px 6px #0500ff, -3px -3px 6px #da05f3');
             break;
@@ -1042,8 +1068,8 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--wb-hbg', '#000000');
             document.documentElement.style.setProperty('--btn-bg', 'white');
             document.documentElement.style.setProperty('--btn-color', 'black');
-            document.documentElement.style.setProperty('--btn-opc', '1');
             document.documentElement.style.setProperty('--btns-left', '20px');
+            document.documentElement.style.setProperty('--btn-opc', '1');
             document.documentElement.style.setProperty('--my-settings-label-color', 'limegreen');
             document.documentElement.style.setProperty('--box-shadow', '3px 3px 6px #0a0b0c, -3px -3px 6px #222328');
             break;
@@ -1063,8 +1089,8 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--wb-hbg', '#000000');
             document.documentElement.style.setProperty('--btn-bg', 'white');
             document.documentElement.style.setProperty('--btn-color', 'black');
-            document.documentElement.style.setProperty('--btn-opc', '1');
             document.documentElement.style.setProperty('--btns-left', '20px');
+            document.documentElement.style.setProperty('--btn-opc', '1');
             document.documentElement.style.setProperty('--my-settings-label-color', 'limegreen');
             document.documentElement.style.setProperty('--box-shadow', '3px 3px 6px #27944f, -3px -3px 6px #14843d');
             break;
@@ -1084,8 +1110,8 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--wb-hbg', '#000000');
             document.documentElement.style.setProperty('--btn-bg', 'white');
             document.documentElement.style.setProperty('--btn-color', 'black');
-            document.documentElement.style.setProperty('--btn-opc', '1');
             document.documentElement.style.setProperty('--btns-left', '20px');
+            document.documentElement.style.setProperty('--btn-opc', '1');
             document.documentElement.style.setProperty('--my-settings-label-color', '#03a5ce');
             document.documentElement.style.setProperty('--box-shadow', '3px 3px 6px #03a5ce, -3px -3px 6px #03a5ce');
             break;
@@ -1093,17 +1119,20 @@ function setTheme(theme) {
             // ghost theme
             swalBackground = 'rgba(0, 0, 0, 0.150)';
             document.documentElement.style.setProperty('--body-bg', 'black');
-            document.documentElement.style.setProperty('--msger-bg', 'transparent');
+            document.documentElement.style.setProperty(
+                '--msger-bg',
+                'linear-gradient(to left, transparent, rgba(0, 0, 0, 0.7))',
+            );
             document.documentElement.style.setProperty(
                 '--msger-private-bg',
                 'linear-gradient(to left, #383838, #000000)',
             );
             document.documentElement.style.setProperty('--wb-bg', '#000000');
             document.documentElement.style.setProperty('--wb-hbg', '#000000');
-            document.documentElement.style.setProperty('--btn-bg', 'transparent');
-            document.documentElement.style.setProperty('--btn-color', 'white');
+            document.documentElement.style.setProperty('--btn-bg', 'white');
+            document.documentElement.style.setProperty('--btn-color', 'black');
+            document.documentElement.style.setProperty('--btns-left', '5px');
             document.documentElement.style.setProperty('--btn-opc', '0.7');
-            document.documentElement.style.setProperty('--btns-left', '20px');
             document.documentElement.style.setProperty('--box-shadow', '0px');
             document.documentElement.style.setProperty('--my-settings-label-color', 'limegreen');
             document.documentElement.style.setProperty('--left-msg-bg', 'rgba(0, 0, 0, 0.7)');
@@ -1113,6 +1142,37 @@ function setTheme(theme) {
         // ...
         default:
             console.log('No theme found');
+    }
+}
+
+/**
+ * Set buttons bar position
+ * @param {*} position vertical / horizontal
+ */
+function setButtonsBarPosition(position) {
+    if (!position || isMobileDevice) return;
+
+    mirotalkBtnsBar = position;
+    switch (mirotalkBtnsBar) {
+        case 'vertical':
+            let btnsLeft = mirotalkTheme === 'ghost' ? '5px' : '20px';
+            document.documentElement.style.setProperty('--btns-top', '50%');
+            document.documentElement.style.setProperty('--btns-right', '0px');
+            document.documentElement.style.setProperty('--btns-left', btnsLeft);
+            document.documentElement.style.setProperty('--btns-margin-left', '0px');
+            document.documentElement.style.setProperty('--btns-width', '40px');
+            document.documentElement.style.setProperty('--btns-flex-direction', 'column');
+            break;
+        case 'horizontal':
+            document.documentElement.style.setProperty('--btns-top', '95%');
+            document.documentElement.style.setProperty('--btns-right', '25%');
+            document.documentElement.style.setProperty('--btns-left', '50%');
+            document.documentElement.style.setProperty('--btns-margin-left', '-300px');
+            document.documentElement.style.setProperty('--btns-width', '600px');
+            document.documentElement.style.setProperty('--btns-flex-direction', 'row');
+            break;
+        default:
+            console.log('No position found');
     }
 }
 
@@ -1643,6 +1703,7 @@ function getTimeToString(time) {
  * Handle WebRTC left buttons
  */
 function manageLeftButtons() {
+    setButtonsBarPosition(mirotalkBtnsBar);
     setShareRoomBtn();
     setAudioBtn();
     setVideoBtn();
@@ -1655,10 +1716,11 @@ function manageLeftButtons() {
     setMyHandBtn();
     setMyWhiteboardBtn();
     setMyFileShareBtn();
+    setMyGameBtn();
     setMySettingsBtn();
     setAboutBtn();
     setLeaveRoomBtn();
-    showLeftButtonsAndMenu();
+    showButtonsBarAndMenu();
 }
 
 /**
@@ -1819,7 +1881,7 @@ function setChatRoomBtn() {
     // close chat room - show left button and status menu if hide
     msgerClose.addEventListener('click', (e) => {
         hideChatRoomAndEmojiPicker();
-        showLeftButtonsAndMenu();
+        showButtonsBarAndMenu();
     });
 
     // open Video Url Player
@@ -1942,12 +2004,33 @@ function setMyFileShareBtn() {
 }
 
 /**
+ * My game button click event and settings
+ */
+function setMyGameBtn() {
+    if (isMobileDevice) {
+        // adapt game iframe for mobile
+        document.documentElement.style.setProperty('--game-iframe-width', '100%');
+        document.documentElement.style.setProperty('--game-iframe-height', '100%');
+    } else {
+        dragElement(gameCont, gameHeader);
+    }
+    gameBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleGame();
+    });
+    gameCloseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleGame();
+    });
+}
+
+/**
  * My settings button click event
  */
 function setMySettingsBtn() {
     mySettingsBtn.addEventListener('click', (e) => {
         if (isMobileDevice) {
-            leftButtons.style.display = 'none';
+            buttonsBar.style.display = 'none';
             isButtonsVisible = false;
         }
         hideShowMySettings();
@@ -1985,7 +2068,7 @@ function setLeaveRoomBtn() {
  */
 function handleBodyOnMouseMove() {
     document.body.addEventListener('mousemove', (e) => {
-        showLeftButtonsAndMenu();
+        showButtonsBarAndMenu();
     });
 }
 
@@ -2003,8 +2086,8 @@ function setupMySettings() {
     tabRoomBtn.addEventListener('click', (e) => {
         openTab(e, 'tabRoom');
     });
-    tabThemeBtn.addEventListener('click', (e) => {
-        openTab(e, 'tabTheme');
+    tabStylingBtn.addEventListener('click', (e) => {
+        openTab(e, 'tabStyling');
     });
     // audio - video select box
     selectors = [audioInputSelect, audioOutputSelect, videoSelect];
@@ -2053,6 +2136,14 @@ function setupMySettings() {
         setTheme(themeSelect.value);
         setRecordButtonUi();
     });
+    // Mobile not support buttons bar position horizontal
+    if (isMobileDevice) {
+        btnsBarSelect.disabled = true;
+    } else {
+        btnsBarSelect.addEventListener('change', (e) => {
+            setButtonsBarPosition(btnsBarSelect.value);
+        });
+    }
     // room actions
     muteEveryoneBtn.addEventListener('click', (e) => {
         disableAllPeers('audio');
@@ -2330,14 +2421,14 @@ function attachMediaStream(element, stream) {
  * if mobile and chatroom open do nothing return
  * if mobile and mySettings open do nothing return
  */
-function showLeftButtonsAndMenu() {
+function showButtonsBarAndMenu() {
     if (isButtonsVisible || (isMobileDevice && isChatRoomVisible) || (isMobileDevice && isMySettingsVisible)) return;
     toggleClassElements('statusMenu', 'inline');
-    leftButtons.style.display = 'flex';
+    buttonsBar.style.display = 'flex';
     isButtonsVisible = true;
     setTimeout(() => {
         toggleClassElements('statusMenu', 'none');
-        leftButtons.style.display = 'none';
+        buttonsBar.style.display = 'none';
         isButtonsVisible = false;
     }, 10000);
 }
@@ -2894,7 +2985,6 @@ function stopStreamRecording() {
  */
 function setRecordButtonUi() {
     recordStreamBtn.style.setProperty('background-color', 'white');
-    if (mirotalkTheme == 'ghost') recordStreamBtn.style.setProperty('background-color', 'transparent');
 }
 
 /**
@@ -2954,7 +3044,7 @@ function setChatRoomForMobile() {
 function showChatRoomDraggable() {
     playSound('newMessage');
     if (isMobileDevice) {
-        leftButtons.style.display = 'none';
+        buttonsBar.style.display = 'none';
         isButtonsVisible = false;
     }
     chatRoomBtn.className = 'fas fa-comment-slash';
@@ -4457,6 +4547,21 @@ function saveBlobToFile(blob, file) {
 }
 
 /**
+ * Hide show game iFrame
+ */
+function toggleGame() {
+    if (isGameOpen) {
+        gameCont.style.display = 'none';
+        isGameOpen = false;
+    } else {
+        gameCont.style.display = 'flex';
+        gameCont.style.top = '50%';
+        gameCont.style.left = '50%';
+        isGameOpen = true;
+    }
+}
+
+/**
  * Opend and send Video URL to all peers in the room
  *
  */
@@ -4615,7 +4720,6 @@ function kickOut(peer_id, peerKickOutBtn) {
                 peer_id: peer_id,
                 peer_name: myPeerName,
             });
-            peerKickOutBtn.style.display = 'none';
         }
     });
 }
