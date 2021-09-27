@@ -1143,6 +1143,8 @@ function setTheme(theme) {
         default:
             console.log('No theme found');
     }
+
+    setButtonsBarPosition(mirotalkBtnsBar);
 }
 
 /**
@@ -1703,7 +1705,6 @@ function getTimeToString(time) {
  * Handle WebRTC left buttons
  */
 function manageLeftButtons() {
-    setButtonsBarPosition(mirotalkBtnsBar);
     setShareRoomBtn();
     setAudioBtn();
     setVideoBtn();
@@ -3504,6 +3505,7 @@ function setMyHandStatus() {
         playSound('raiseHand');
     }
     myHandStatusIcon.style.display = myHandStatus ? 'inline' : 'none';
+    myHandBtn.className = myHandStatus ? 'fas fa-hand-paper' : 'fas fa-hand-rock';
     emitPeerStatus('hand', myHandStatus);
 }
 
