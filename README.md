@@ -68,6 +68,7 @@ Open the app with the following **supported browsers** & many more...
 
 -   You will need to have `Node.js` installed, this project has been tested with Node version [12.X](https://nodejs.org/en/blog/release/v12.22.1/) and [14.X](https://nodejs.org/en/blog/release/v14.17.5/)
 
+```bash
 # clone this repo
 $ git clone https://github.com/mmguero/mirotalk.git
 # go to mirotalk dir
