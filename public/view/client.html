@@ -4,8 +4,8 @@
         <!-- Title and Icon -->
 
         <title>MiroTalk WebRTC Video call, Chat Room & Screen Sharing.</title>
-        <link rel="shortcut icon" href="images/logo.svg" />
-        <link rel="apple-touch-icon" href="images/logo.svg" />
+        <link rel="shortcut icon" href="../images/logo.svg" />
+        <link rel="apple-touch-icon" href="../images/logo.svg" />
 
         <!-- Meta Information -->
 
@@ -29,14 +29,14 @@
         <meta property="og:site_name" content="MiroTalk" />
         <meta property="og:title" content="Click the link to join this call." />
         <meta property="og:description" content="Free WebRTC browser-based video call." />
-        <meta property="og:image" content="/images/mirotalk.png" />
+        <meta property="og:image" content="https://mirotalk.up.railway.app/images/preview.png" />
         <meta property="og:url" content="https://mirotalk.herokuapp.com/" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon.png" />
 
         <!-- StyleSheet -->
 
-        <link rel="stylesheet" href="/css/client.css" />
-        <link rel="stylesheet" href="/css/whiteboard.css" />
+        <link rel="stylesheet" href="../css/client.css" />
+        <link rel="stylesheet" href="../css/whiteboard.css" />
 
         <!-- https://animate.style 4 using for swal fadeIn-Out -->
 
@@ -342,32 +342,34 @@ access to use this app.
 
         <!-- Start whiteboard -->
 
-        <div class="whiteboard-cont">
-            <div class="colors-cont">
-                <button id="whiteboardCloseBtn" class="fas fa-times"></button>
-                <button id="whiteboardFsBtn" class="fas fa-expand-alt"></button>
-                <div>
-                    <input type="color" id="whiteboardColorPicker" onchange="setColor(value)" />
+        <section id="whiteboard" class="hidden">
+            <header id="whiteboardHeader" class="whiteboard-header">
+                <div id="whiteboardTitle" class="whiteboard-header-title"></div>
+                <div class="whiteboard-header-options">
+                    pencil
+                    <input id="wbDrawingColorEl" class="whiteboardColorPicker" type="color" value="#FFFFFF" />
+                    background
+                    <input id="wbBackgroundColorEl" class="whiteboardColorPicker" type="color" value="#000000" />
+                    <button id="whiteboardPencilBtn" class="fas fa-pencil-alt"></button>
+                    <button id="whiteboardObjectBtn" class="fas fa-mouse-pointer"></button>
+                    <button id="whiteboardUndoBtn" class="fas fa-undo"></button>
+                    <button id="whiteboardRedoBtn" class="fas fa-redo"></button>
+                    <button id="whiteboardImgFileBtn" class="far fa-image"></button>
+                    <button id="whiteboardImgUrlBtn" class="fas fa-link"></button>
+                    <button id="whiteboardTextBtn" class="fas fa-spell-check"></button>
+                    <button id="whiteboardLineBtn" class="fas fa-slash"></button>
+                    <button id="whiteboardRectBtn" class="far fa-square"></button>
+                    <button id="whiteboardCircleBtn" class="far fa-circle"></button>
+                    <button id="whiteboardSaveBtn" class="fas fa-save"></button>
+                    <button id="whiteboardEraserBtn" class="fas fa-eraser"></button>
+                    <button id="whiteboardCleanBtn" class="fas fa-trash"></button>
+                    <button id="whiteboardCloseBtn" class="fas fa-times"></button>
                 </div>
-                <br />
-
-                <div class="white" onclick="setColor('#ffffff')"></div>
-                <div class="red" onclick="setColor('#e74c3c')"></div>
-                <div class="yellow" onclick="setColor('#f1c40f')"></div>
-                <div class="green" onclick="setColor('#badc58')"></div>
-                <div class="blue" onclick="setColor('#3498db')"></div>
-                <div class="orange" onclick="setColor('#e67e22')"></div>
-                <div class="purple" onclick="setColor('#9b59b6')"></div>
-                <div class="pink" onclick="setColor('#fd79a8')"></div>
-                <div class="brown" onclick="setColor('#834c32')"></div>
-                <div class="grey" onclick="setColor('#afadad')"></div>
-
-                <button id="whiteboardEraserBtn" class="fas fa-eraser"></button>
-                <button id="whiteboardSaveBtn" class="fas fa-save"></button>
-                <button id="whiteboardCleanBtn" class="fas fa-trash"></button>
-            </div>
-            <canvas id="whiteboard"></canvas>
-        </div>
+            </header>
+            <main>
+                <canvas id="wbCanvas"></canvas>
+            </main>
+        </section>
 
         <!-- End whiteboard -->
 
@@ -428,11 +430,12 @@ access to use this app.
         <script defer src="https://cdn.rawgit.com/muaz-khan/DetectRTC/master/DetectRTC.js"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.20"></script>
         <script defer type="module" src="https://unpkg.com/emoji-picker-element@1"></script>
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/460/fabric.min.js"></script>
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
         <script defer src="https://unpkg.com/@popperjs/core@2"></script>
         <script defer src="https://unpkg.com/tippy.js@6"></script>
         <script defer src="/socket.io/socket.io.js"></script>
-        <script defer src="/js/client.js"></script>
+        <script defer src="../js/client.js"></script>
 
         <!-- end of Js scripts -->
 

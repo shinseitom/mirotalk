@@ -1,4 +1,4 @@
-# MiroTalk
+# MiroTalk P2P
 
 🚀 `A free WebRTC browser-based video call, chat and screen sharing` 🚀
 
@@ -20,15 +20,13 @@ Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn.
 
 Open the app with the following **supported browsers** & many more...
 
-[//]: #![webrtc](www/images/webrtc.png)
-
-[![Foo](www/images/browsers.png)](https://mirotalk.herokuapp.com/)
+[![Foo](public/images/browsers.png)](https://mirotalk.herokuapp.com/)
 
 ## https://mirotalk.herokuapp.com/
 
 <br>
 
-[![mirotalk](www/images/preview.png)](https://mirotalk.herokuapp.com/)
+[![mirotalk](public/images/preview.png)](https://mirotalk.herokuapp.com/)
 
 ## Features
 
@@ -46,14 +44,14 @@ Open the app with the following **supported browsers** & many more...
 -   Ability to set video quality up to 4K and adapt the FPS
 -   Recording your Screen, Audio and Video
 -   Chat with Emoji Picker & Private messages & Save the conversations
--   Simple collaborative whiteboard for the teachers
+-   Advance collaborative whiteboard for the teachers
 -   Share any YouTube video in real time
 -   Start a tetris game in waiting your participants :)
 -   Full Screen Mode on mouse click on the Video element
 -   Possibility to Change UI Themes
 -   Right-click on the Video elements for more options
 -   Direct `peer-to-peer` connection ensures the lowest latency thanks to `WebRTC`
--   Supports [REST API](api/README.md) (Application Programming Interface)
+-   Supports [REST API](app/api/README.md) (Application Programming Interface)
 
 ## Demo
 
@@ -128,7 +126,7 @@ If you want `MiroTalk` to be `reachable` from the `outside` of your local networ
 
 `demo` https://mirotalk.herokuapp.com/
 
-[![heroku-qr](www/images/mirotalk-heroku-qr.png)](https://mirotalk.herokuapp.com/)
+[![heroku-qr](public/images/mirotalk-heroku-qr.png)](https://mirotalk.herokuapp.com/)
 
 <br>
 
@@ -136,7 +134,7 @@ If you want `MiroTalk` to be `reachable` from the `outside` of your local networ
 
 `demo` https://mirotalk.up.railway.app/
 
-[![railway-qr](www/images/mirotalk-railway-qr.png)](https://mirotalk.up.railway.app/)
+[![railway-qr](public/images/mirotalk-railway-qr.png)](https://mirotalk.up.railway.app/)
 
 ---
 
@@ -147,7 +145,7 @@ Many Thanks to:
 -   ianramzy (html [template](https://cruip.com/demos/neon/))
 -   vasanthv (webrtc)
 -   Sajad (chat)
--   i-aryan (whiteboard)
+-   fabric.js (whiteboard)
 -   fmeringdal (rest api)
 
 From where I took inspiration for this project. ❤️
@@ -163,7 +161,7 @@ From where I took inspiration for this project. ❤️
 
 ## License
 
-[![AGPLv3](www/images/AGPLv3.png)](LICENSE)
+[![AGPLv3](public/images/AGPLv3.png)](LICENSE)
 
 ---
 
