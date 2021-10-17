@@ -93,7 +93,6 @@ let isDocumentOnFullScreen = false;
 let isWhiteboardFs = false;
 let isVideoUrlPlayerOpen = false;
 let isRecScreenSream = false;
-let isGameOpen = false;
 let signalingSocket; // socket.io connection to our webserver
 let localMediaStream; // my microphone / webcam
 let remoteMediaStream; // peers microphone / webcam
@@ -136,7 +135,6 @@ let chatRoomBtn;
 let myHandBtn;
 let whiteboardBtn;
 let fileShareBtn;
-let gameBtn;
 let mySettingsBtn;
 let aboutBtn;
 let leaveRoomBtn;
@@ -242,11 +240,6 @@ let videoUrlCont;
 let videoUrlHeader;
 let videoUrlCloseBtn;
 let videoUrlIframe;
-// game player
-let gameCont;
-let gameHeader;
-let gameCloseBtn;
-let gameIframe;
 
 /**
  * Load all Html elements by Id
@@ -269,7 +262,6 @@ function getHtmlElementsById() {
     chatRoomBtn = getId('chatRoomBtn');
     whiteboardBtn = getId('whiteboardBtn');
     fileShareBtn = getId('fileShareBtn');
-    gameBtn = getId('gameBtn');
     myHandBtn = getId('myHandBtn');
     mySettingsBtn = getId('mySettingsBtn');
     aboutBtn = getId('aboutBtn');
@@ -350,11 +342,6 @@ function getHtmlElementsById() {
     videoUrlHeader = getId('videoUrlHeader');
     videoUrlCloseBtn = getId('videoUrlCloseBtn');
     videoUrlIframe = getId('videoUrlIframe');
-    // game player
-    gameCont = getId('gameCont');
-    gameHeader = getId('gameHeader');
-    gameCloseBtn = getId('gameCloseBtn');
-    gameIframe = getId('gameIframe');
 }
 
 /**
@@ -404,10 +391,6 @@ function setButtonsTitle() {
     });
     tippy(fileShareBtn, {
         content: 'SHARE the file',
-        placement: 'right-start',
-    });
-    tippy(gameBtn, {
-        content: 'START a game',
         placement: 'right-start',
     });
     tippy(mySettingsBtn, {
@@ -542,11 +525,6 @@ function setButtonsTitle() {
     });
     tippy(msgerVideoUrlBtn, {
         content: 'Share YouTube video to all participants',
-    });
-
-    // game player
-    tippy(gameCloseBtn, {
-        content: 'Close the game',
     });
 }
 
@@ -1110,7 +1088,7 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--btn-color', 'black');
             document.documentElement.style.setProperty('--btns-left', '20px');
             document.documentElement.style.setProperty('--btn-opc', '1');
-            document.documentElement.style.setProperty('--my-settings-label-color', 'limegreen');
+            document.documentElement.style.setProperty('--my-settings-label-color', 'white');
             document.documentElement.style.setProperty('--box-shadow', '3px 3px 6px #0500ff, -3px -3px 6px #da05f3');
             break;
         case 'dark':
@@ -1131,7 +1109,7 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--btn-color', 'black');
             document.documentElement.style.setProperty('--btns-left', '20px');
             document.documentElement.style.setProperty('--btn-opc', '1');
-            document.documentElement.style.setProperty('--my-settings-label-color', 'limegreen');
+            document.documentElement.style.setProperty('--my-settings-label-color', 'white');
             document.documentElement.style.setProperty('--box-shadow', '3px 3px 6px #0a0b0c, -3px -3px 6px #222328');
             break;
         case 'forest':
@@ -1152,7 +1130,7 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--btn-color', 'black');
             document.documentElement.style.setProperty('--btns-left', '20px');
             document.documentElement.style.setProperty('--btn-opc', '1');
-            document.documentElement.style.setProperty('--my-settings-label-color', 'limegreen');
+            document.documentElement.style.setProperty('--my-settings-label-color', 'white');
             document.documentElement.style.setProperty('--box-shadow', '3px 3px 6px #27944f, -3px -3px 6px #14843d');
             break;
         case 'sky':
@@ -1173,7 +1151,7 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--btn-color', 'black');
             document.documentElement.style.setProperty('--btns-left', '20px');
             document.documentElement.style.setProperty('--btn-opc', '1');
-            document.documentElement.style.setProperty('--my-settings-label-color', '#03a5ce');
+            document.documentElement.style.setProperty('--my-settings-label-color', 'white');
             document.documentElement.style.setProperty('--box-shadow', '3px 3px 6px #03a5ce, -3px -3px 6px #03a5ce');
             break;
         case 'ghost':
@@ -1195,7 +1173,7 @@ function setTheme(theme) {
             document.documentElement.style.setProperty('--btns-left', '5px');
             document.documentElement.style.setProperty('--btn-opc', '0.7');
             document.documentElement.style.setProperty('--box-shadow', '0px');
-            document.documentElement.style.setProperty('--my-settings-label-color', 'limegreen');
+            document.documentElement.style.setProperty('--my-settings-label-color', 'white');
             document.documentElement.style.setProperty('--left-msg-bg', 'rgba(0, 0, 0, 0.7)');
             document.documentElement.style.setProperty('--private-msg-bg', 'rgba(252, 110, 110, 0.7)');
             document.documentElement.style.setProperty('--right-msg-bg', 'rgba(0, 0, 0, 0.7)');
@@ -1778,7 +1756,6 @@ function manageLeftButtons() {
     setMyHandBtn();
     setMyWhiteboardBtn();
     setMyFileShareBtn();
-    setMyGameBtn();
     setMySettingsBtn();
     setAboutBtn();
     setLeaveRoomBtn();
@@ -2084,27 +2061,6 @@ function setMyFileShareBtn() {
     });
     sendAbortBtn.addEventListener('click', (e) => {
         abortFileTransfer();
-    });
-}
-
-/**
- * My game button click event and settings
- */
-function setMyGameBtn() {
-    if (isMobileDevice) {
-        // adapt game iframe for mobile
-        document.documentElement.style.setProperty('--game-iframe-width', '100%');
-        document.documentElement.style.setProperty('--game-iframe-height', '100%');
-    } else {
-        dragElement(gameCont, gameHeader);
-    }
-    gameBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleGame();
-    });
-    gameCloseBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleGame();
     });
 }
 
@@ -3588,7 +3544,6 @@ function setMyHandStatus() {
         playSound('raiseHand');
     }
     myHandStatusIcon.style.display = myHandStatus ? 'inline' : 'none';
-    myHandBtn.className = myHandStatus ? 'fas fa-hand-paper' : 'fas fa-hand-rock';
     emitPeerStatus('hand', myHandStatus);
 }
 
@@ -4762,21 +4717,6 @@ function saveBlobToFile(blob, file) {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
     }, 100);
-}
-
-/**
- * Hide show game iFrame
- */
-function toggleGame() {
-    if (isGameOpen) {
-        gameCont.style.display = 'none';
-        isGameOpen = false;
-    } else {
-        gameCont.style.display = 'flex';
-        gameCont.style.top = '50%';
-        gameCont.style.left = '50%';
-        isGameOpen = true;
-    }
 }
 
 /**
