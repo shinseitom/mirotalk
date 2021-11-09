@@ -20,7 +20,7 @@ Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn.
 
 Open the app with the following **supported browsers** & many more...
 
-[![Foo](public/images/browsers.png)](https://mirotalk.herokuapp.com/)
+[![browsers](public/images/browsers.png)](https://mirotalk.herokuapp.com/)
 
 ## https://mirotalk.herokuapp.com/
 
