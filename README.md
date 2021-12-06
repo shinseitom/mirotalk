@@ -162,7 +162,3 @@ From where I took inspiration for this project. ❤️
 ## License
 
 [![AGPLv3](public/images/AGPLv3.png)](LICENSE)
-
----
-
-<p align="center"><a href="https://www.linkedin.com/in/miroslav-pejic-976a07101/">Miroslav Pejic</a></p>
