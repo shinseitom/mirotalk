@@ -14,7 +14,7 @@
 [![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Discord](https://img.shields.io/badge/Chat-Discord-green)](https://discord.gg/TAeWXJCvBr)
 
-**`mmguero`** [![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/mmguero/mirotalk)
+**`mmguero`** [![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)] ![Docker Image](https://github.com/mmguero/mirotalk/workflows/mirotalk-build-push-ghcr/badge.svg)
 
 Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn. `MiroTalk` provides video quality and latency not available with traditional technology.
 
