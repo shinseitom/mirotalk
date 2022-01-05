@@ -1,24 +1,17 @@
 # MiroTalk P2P
 
-🚀 `A free WebRTC browser-based video call, chat and screen sharing` 🚀
-
-<br>
-
 [//]: https://img.shields.io/badge/<LABEL>-<MESSAGE>-<COLOR>
 
 **`miroslavpejic85`** [![Author](https://img.shields.io/badge/Author-Miroslav-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101/)
 ![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)
-[![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/miroslavpejic85/mirotalk)
-[![Digital Ocean](https://img.shields.io/badge/Tested%20on-DigitalOcean-blue)](https://m.do.co/c/1070207afbb1)
-[![Code style: prettier](https://img.shields.io/badge/Code_style-Prettier-ff69b4.svg?)](https://github.com/prettier/prettier)
-[![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![Discord](https://img.shields.io/badge/Chat-Discord-green)](https://discord.gg/TAeWXJCvBr)
+
+<br>
 
 **`mmguero`** ![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg) ![Docker Image](https://github.com/mmguero/mirotalk/workflows/mirotalk-build-push-ghcr/badge.svg)
 
-Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn. `MiroTalk` provides video quality and latency not available with traditional technology.
+Free `WebRTC` browser-based video calls, chat, and screen sharing, using google Stun and [numb](http://numb.viagenie.ca/) Turn. `MiroTalk` provides video quality and latency not available with traditional technology.
 
-Open the app with the following **supported browsers** & many more...
+Open the app with the following **supported browsers** and many more.
 
 [![browsers](public/images/browsers.png)](https://mirotalk.herokuapp.com/)
 
@@ -30,12 +23,12 @@ Open the app with the following **supported browsers** & many more...
 
 ## Features
 
--   Is `100% Free` and `Open Source`
--   No download, plug-in or login required, entirely browser based
+-   Is `100% Free` - `Open Source` - `Self-hosted`
+-   No download, plug-in, or login required, entirely browser-based
 -   Unlimited number of conference rooms without call time limitation
 -   Possibility to Lock/Unlock the Room for the meeting
 -   Desktop and Mobile compatible
--   Optimized Room URL Sharing (share it to your participants, wait them to join)
+-   Optimized Room URL Sharing (share it to your participants, wait for them to join)
 -   Webcam Streaming (Front - Rear for mobile)
 -   Audio Streaming crystal clear
 -   Screen Sharing to present documents, slides, and more...
@@ -45,8 +38,8 @@ Open the app with the following **supported browsers** & many more...
 -   Recording your Screen, Audio and Video
 -   Chat with Emoji Picker & Private messages & Save the conversations
 -   Advance collaborative whiteboard for the teachers
--   Share any YouTube video in real time
--   Full Screen Mode on mouse click on the Video element
+-   Share any YouTube video in real-time
+-   Full-Screen Mode on mouse click on the Video element
 -   Possibility to Change UI Themes
 -   Right-click on the Video elements for more options
 -   Direct `peer-to-peer` connection ensures the lowest latency thanks to `WebRTC`
@@ -54,14 +47,23 @@ Open the app with the following **supported browsers** & many more...
 
 ## Demo
 
--   `Open` https://mirotalk.up.railway.app/newcall `or` https://mirotalk.herokuapp.com/newcall
--   `Pick` your personal Room name and `Join To Room`
--   `Allow` to use the camera and microphone
--   `Share` the Room URL and `Wait` someone to join for video conference
+-   `Open` https://mirotalk.up.railway.app/newcall or https://mirotalk.herokuapp.com/newcall
+-   `Pick` your Room name and Join
+-   `Allow` using the camera and microphone
+-   `Share` the Room URL and Wait for someone to join for the video conference
 
-## Room join
+## Direct join
 
--   You can also `join` directly to your `room` by going to https://mirotalk.up.railway.app/join/your-room-name-goes-here `or` https://mirotalk.herokuapp.com/join/your-room-name-goes-here
+-   You can also `join` directly to your `room` by going to:
+-   https://mirotalk.up.railway.app/join?room=test&name=mirotalk&audio=0&video=0
+-   https://mirotalk.herokuapp.com/join?room=test&name=mirotalk&audio=0&video=0
+
+    | Params | Type    | Description      |
+    | ------ | ------- | ---------------- |
+    | room   | string  | room Id          |
+    | name   | string  | your name        |
+    | audio  | boolean | enable / disable |
+    | video  | boolean | enable / disable |
 
 ## Quick start
 
@@ -86,7 +88,8 @@ $ npm start
 
 ## Docker
 
--   Install https://docs.docker.com/compose/install/
+-   Install docker engine: https://docs.docker.com/engine/install/
+-   Install docker compose: https://docs.docker.com/compose/install/
 
 ```bash
 # copy .env.template to .env
@@ -140,21 +143,14 @@ If you want `MiroTalk` to be `reachable` from the `outside` of your local networ
 
 ## Credits
 
-Many Thanks to:
-
 -   ianramzy (html [template](https://cruip.com/demos/neon/))
--   vasanthv (webrtc)
--   Sajad (chat)
+-   vasanthv (webrtc-logic)
 -   fabric.js (whiteboard)
--   fmeringdal (rest api)
-
-From where I took inspiration for this project. ❤️
 
 ## Contributing
 
--   Pull Requests are very welcome! :slightly_smiling_face:
--   Just run [prettier](https://prettier.io) on all of your PRs before submitting, this can be done with the following comand: `npm run lint`
-
+-   Contributions are welcome and greatly appreciated!
+-   Just run before `npm run lint`
 -   For communication we use [gitter](https://gitter.im/) or [discord](https://discord.com/) chats which can be found here:
 
 [![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Discord](https://img.shields.io/badge/chat-discord-green)](https://discord.gg/TAeWXJCvBr)
