@@ -30,13 +30,14 @@ Open the app with the following **supported browsers** and many more.
 -   Desktop and Mobile compatible
 -   Optimized Room URL Sharing (share it to your participants, wait for them to join)
 -   Webcam Streaming (Front - Rear for mobile)
--   Audio Streaming crystal clear
+-   Audio Streaming crystal clear + detect speacking and indicator
 -   Screen Sharing to present documents, slides, and more...
 -   File Sharing, share any files to your participants in the room
 -   Select Audio Input - Output && Video source
 -   Ability to set video quality up to 4K and 60 FPS
 -   Recording your Screen, Audio and Video
 -   Chat with Emoji Picker & Private messages & Save the conversations
+-   Speech recognition to send the speeches
 -   Advance collaborative whiteboard for the teachers
 -   Share any YouTube video in real-time
 -   Full-Screen Mode on mouse click on the Video element
@@ -106,6 +107,12 @@ $ docker-compose down
 
 ---
 
+## Setup Turn
+
+`Recommended`, for more info about the Turn check out [here](https://webrtc.org/getting-started/turn-server). Just edit [this part](https://github.com/miroslavpejic85/mirotalk/blob/master/.env.template#L9) on your `.env`.
+
+---
+
 ## API
 
 ```bash
@@ -121,21 +128,23 @@ The API documentation uses [swagger](https://swagger.io/) at http://localhost:30
 
 ---
 
-If you want `MiroTalk` to be `reachable` from the `outside` of your local network, you can use a service like [ngrok](https://ngrok.com/) (by editing the `Ngrok` part on `.env` file) or expose it directly on [https](ssl/README.md) or deploy it on:
+## Live demo
+
+If you want `MiroTalk` to be `reachable` from the `outside` of your local network, you can use a service like [ngrok](https://ngrok.com/) (by editing the [Ngrok part](https://github.com/miroslavpejic85/mirotalk/blob/master/.env.template#L1) on `.env` file) or expose it directly on [HTTPS](app/ssl/README.md) or deploy it on:
 
 <br>
 
-[![Deploy on Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/)
+<a target="_blank" href="https://www.heroku.com/"><img src="https://www.herokucdn.com/deploy/button.svg" style="width: 220px;"></a>
 
-`demo` https://mirotalk.herokuapp.com/
+https://mirotalk.herokuapp.com/
 
 [![heroku-qr](public/images/mirotalk-heroku-qr.png)](https://mirotalk.herokuapp.com/)
 
 <br>
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app)
+<a target="_blank" href="https://railway.app"><img src="https://railway.app/button.svg" style="width: 220px;"></a>
 
-`demo` https://mirotalk.up.railway.app/
+https://mirotalk.up.railway.app/
 
 [![railway-qr](public/images/mirotalk-railway-qr.png)](https://mirotalk.up.railway.app/)
 
@@ -153,7 +162,7 @@ If you want `MiroTalk` to be `reachable` from the `outside` of your local networ
 -   Just run before `npm run lint`
 -   For communication we use [gitter](https://gitter.im/) or [discord](https://discord.com/) chats which can be found here:
 
-[![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Discord](https://img.shields.io/badge/chat-discord-green)](https://discord.gg/gYy3KgDn9R)
+[![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Discord](https://img.shields.io/badge/chat-discord-green)](https://discord.gg/rgGYfeYW3N)
 
 ## License
 
