@@ -442,16 +442,18 @@ body {
     color: #666;
 }
 
+.msger-header-title button,
 .msger-header-options button {
     border: none;
     font-size: 1.2rem;
-    transition: all 0.3s ease-in-out;
     background: rgb(0, 0, 0);
     color: #fff;
     border-radius: 5px;
+    transition: all 0.3s ease-in-out;
     transition: background 0.23s;
 }
 
+.msger-header-title button:hover,
 .msger-header-options button:hover {
     color: var(--hover-color);
     transform: var(--btns-hover-scale);
@@ -605,6 +607,7 @@ button:hover {
     border: none;
     border-radius: 3px;
     font-size: 1em;
+    margin: 2px;
     color: white;
 }
 
@@ -1155,10 +1158,6 @@ progress {
     /*text-decoration: none;*/
 }
 
-#about b {
-    color: rgb(0, 180, 50);
-}
-
 #about a {
     color: white;
     text-decoration: none;
@@ -1214,6 +1213,19 @@ progress {
     transition-property: height background-color;
     transition-duration: 0.25s;
     /*box-shadow: var(--box-shadow);*/
+}
+
+/*--------------------------------------------------------------
+# speech recognition languages
+--------------------------------------------------------------*/
+
+#recognitionDialect,
+#recognitionLanguage {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #ffffff;
+    font-size: small;
+    max-width: 135px;
+    border-radius: 5px;
 }
 
 /*--------------------------------------------------------------

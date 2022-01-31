@@ -19,7 +19,7 @@ Open the app with the following **supported browsers** and many more.
 
 <br>
 
-[![mirotalk](public/images/preview.png)](https://mirotalk.herokuapp.com/)
+[![mirotalk](public/images/mirotalk-header.png)](https://mirotalk.herokuapp.com/)
 
 ## Features
 
@@ -36,6 +36,7 @@ Open the app with the following **supported browsers** and many more.
 -   Select Audio Input - Output && Video source
 -   Ability to set video quality up to 4K and 60 FPS
 -   Recording your Screen, Audio and Video
+-   Snapshot the video frame and save it as image png
 -   Chat with Emoji Picker & Private messages & Save the conversations
 -   Speech recognition to send the speeches
 -   Advance collaborative whiteboard for the teachers
@@ -56,8 +57,8 @@ Open the app with the following **supported browsers** and many more.
 ## Direct join
 
 -   You can also `join` directly to your `room` by going to:
--   https://mirotalk.up.railway.app/join?room=test&name=mirotalk&audio=0&video=0
--   https://mirotalk.herokuapp.com/join?room=test&name=mirotalk&audio=0&video=0
+-   https://mirotalk.up.railway.app/join?room=test&name=mirotalk&audio=0&video=0&notify=0
+-   https://mirotalk.herokuapp.com/join?room=test&name=mirotalk&audio=0&video=0&notify=0
 
     | Params | Type    | Description      |
     | ------ | ------- | ---------------- |
@@ -65,6 +66,7 @@ Open the app with the following **supported browsers** and many more.
     | name   | string  | your name        |
     | audio  | boolean | enable / disable |
     | video  | boolean | enable / disable |
+    | notify | boolean | enable / disable |
 
 ## Quick start
 

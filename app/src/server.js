@@ -150,14 +150,17 @@ app.get('/join/', (req, res) => {
     if (Object.keys(req.query).length > 0) {
         log.debug('Request Query', req.query);
         /* 
-            http://localhost:3000/join?room=test&name=mirotalk&audio=1&video=1
-            all params are mandatory for the direct room join 
+            http://localhost:3000/join?room=test&name=mirotalk&audio=1&video=1&notify=1
+            https://mirotalk.up.railway.app/join?room=test&name=mirotalk&audio=1&video=1&notify=1
+            https://mirotalk.herokuapp.com/join?room=test&name=mirotalk&audio=1&video=1&notify=1
         */
         let roomName = req.query.room;
         let peerName = req.query.name;
         let peerAudio = req.query.audio;
         let peerVideo = req.query.video;
-        if (roomName && peerName && peerAudio && peerVideo) {
+        let notify = req.query.notify;
+        // all the params are mandatory for the direct room join
+        if (roomName && peerName && peerAudio && peerVideo && notify) {
             res.sendFile(path.join(__dirname, '../../', 'public/view/client.html'));
             return;
         }
@@ -177,7 +180,6 @@ app.get('/join/*', (req, res) => {
 
 /**
     MiroTalk API v1
-    The response will give you a entrypoint / Room URL for your meeting.
     For api docs we use: https://swagger.io/
 */
 
@@ -197,7 +199,7 @@ app.post([apiBasePath + '/meeting'], (req, res) => {
     }
     // setup meeting URL
     let host = req.headers.host;
-    let meetingURL = getMeetingURL(host) + '/join/' + uuidV4();
+    let meetingURL = getMeetingURL(host);
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ meeting: meetingURL }));
 
@@ -210,12 +212,11 @@ app.post([apiBasePath + '/meeting'], (req, res) => {
 });
 
 /**
- * Get Meeting Room URL
- * @param {*} host string
- * @returns meeting Room URL
+ * Request meeting room endpoint
+ * @returns  entrypoint / Room URL for your meeting.
  */
 function getMeetingURL(host) {
-    return 'http' + (host.includes('localhost') ? '' : 's') + '://' + host;
+    return 'http' + (host.includes('localhost') ? '' : 's') + '://' + host + '/join/' + uuidV4();
 }
 
 // end of MiroTalk API v1

@@ -30,13 +30,14 @@ const signalingServerPort = 3000; // must be the same to server.js PORT
 const signalingServer = getSignalingServer();
 const roomId = getRoomId();
 const peerInfo = getPeerInfo();
-const peerLoockupUrl = 'https://extreme-ip-lookup.com/json/?key=demo';
+const peerLoockupUrl = 'https://extreme-ip-lookup.com/json/?key=demo2';
 const avatarApiUrl = 'https://eu.ui-avatars.com/api';
-const welcomeImg = '../images/image-placeholder.svg';
-const shareUrlImg = '../images/image-placeholder.svg';
+const surveyURL = 'https://www.questionpro.com/t/AUs7VZq00L';
+const welcomeImg = '../images/image-placeholder.png';
+const shareUrlImg = '../images/image-placeholder.png';
 const leaveRoomImg = '../images/leave-room.png';
-const confirmImg = '../images/image-placeholder.svg';
-const fileSharingImg = '../images/image-placeholder.svg';
+const confirmImg = '../images/image-placeholder.png';
+const fileSharingImg = '../images/image-placeholder.png';
 // nice free icon: https://www.iconfinder.com
 const roomLockedImg = '../images/locked.png';
 const camOffImg = '../images/cam-off.png';
@@ -45,8 +46,9 @@ const deleteImg = '../images/delete.png';
 const youtubeImg = '../images/youtube.png';
 const messageImg = '../images/message.png';
 const kickedOutImg = '../images/leave-room.png';
-const aboutImg = '../images/about.png';
+const aboutImg = '../images/about.jpg';
 
+const surveyActive = true; // when leaving the room give a feedback
 const notifyBySound = true; // turn on - off sound notifications
 const fileSharingInput = '*'; // allow all file extensions
 
@@ -77,6 +79,8 @@ let myPeerId;
 let videoMaxFrameRate = 30;
 let screenMaxFrameRate = 30;
 
+let videoQualitySelectedIndex = 0; // default
+
 let leftChatAvatar;
 let rightChatAvatar;
 
@@ -90,6 +94,7 @@ let swalBackground = 'rgba(0, 0, 0, 0.7)'; // black - #16171b - transparent ...
 let peerGeo;
 let peerConnection;
 let myPeerName = getPeerName();
+let notify = getNotify();
 let useAudio = true;
 let useVideo = true;
 let camera = 'user';
@@ -193,8 +198,6 @@ let screenFpsSelect;
 let themeSelect;
 let btnsBarSelect;
 let selectors;
-let speechRecognitionStart;
-let speechRecognitionStop;
 // my video element
 let myVideo;
 let myVideoWrap;
@@ -266,6 +269,9 @@ let videoUrlCont;
 let videoUrlHeader;
 let videoUrlCloseBtn;
 let videoUrlIframe;
+// speech recognition
+let speechRecognitionStart;
+let speechRecognitionStop;
 
 /**
  * Load all Html elements by Id
@@ -339,8 +345,6 @@ function getHtmlElementsById() {
     screenFpsSelect = getId('screenFps');
     themeSelect = getId('mirotalkTheme');
     btnsBarSelect = getId('mirotalkBtnsBar');
-    speechRecognitionStart = getId('speechRecognitionStart');
-    speechRecognitionStop = getId('speechRecognitionStop');
     // my conference name, hand, video - audio status
     myVideoParagraph = getId('myVideoParagraph');
     myHandStatusIcon = getId('myHandStatusIcon');
@@ -385,6 +389,9 @@ function getHtmlElementsById() {
     videoUrlHeader = getId('videoUrlHeader');
     videoUrlCloseBtn = getId('videoUrlCloseBtn');
     videoUrlIframe = getId('videoUrlIframe');
+    // speech recognition
+    speechRecognitionStart = getId('speechRecognitionStart');
+    speechRecognitionStop = getId('speechRecognitionStop');
 }
 
 /**
@@ -473,7 +480,7 @@ function setTippy(elem, content, placement) {
 /**
  * Get peer info using DetecRTC
  * https://github.com/muaz-khan/DetectRTC
- * @return Obj peer info
+ * @returns Obj peer info
  */
 function getPeerInfo() {
     return {
@@ -489,7 +496,7 @@ function getPeerInfo() {
 
 /**
  * Get approximative peer geolocation
- * @return json
+ * @returns json
  */
 function getPeerGeoLocation() {
     fetch(peerLoockupUrl)
@@ -502,7 +509,7 @@ function getPeerGeoLocation() {
 
 /**
  * Get Signaling server URL
- * @return Signaling server URL
+ * @returns Signaling server URL
  */
 function getSignalingServer() {
     if (isHttps) {
@@ -520,7 +527,7 @@ function getSignalingServer() {
 
 /**
  * Generate random Room id if not set
- * @return Room Id
+ * @returns Room Id
  */
 function getRoomId() {
     // chek if passed as params /join?room=id
@@ -532,7 +539,7 @@ function getRoomId() {
 
     // if not specified room id, create one random
     if (roomId == '') {
-        roomId = makeId(12);
+        roomId = makeId(20);
         const newurl = signalingServer + '/join/' + roomId;
         window.history.pushState({ url: newurl }, roomId, newurl);
     }
@@ -555,8 +562,21 @@ function makeId(length) {
 }
 
 /**
+ * Check if notify is set
+ */
+function getNotify() {
+    let qs = new URLSearchParams(window.location.search);
+    let notify = qs.get('notify');
+    if (notify) {
+        let queryNotify = notify === '1' || notify === 'true';
+        if (queryNotify != null) return queryNotify;
+    }
+    return true;
+}
+
+/**
  * Check if peer name is set
- * @return Peer Name
+ * @returns Peer Name
  */
 function getPeerName() {
     let qs = new URLSearchParams(window.location.search);
@@ -565,7 +585,7 @@ function getPeerName() {
 
 /**
  * Check if there is peer connections
- * @return true, false otherwise
+ * @returns true, false otherwise
  */
 function thereIsPeerConnections() {
     if (Object.keys(peerConnections).length === 0) return false;
@@ -652,7 +672,7 @@ function whoAreYou() {
     if (myPeerName) {
         checkPeerAudioVideo();
         whoAreYouJoin();
-        welcomeUser();
+        notify ? welcomeUser() : playSound('addPeer');
         return;
     }
 
@@ -685,7 +705,7 @@ function whoAreYou() {
             whoAreYouJoin();
         },
     }).then(() => {
-        welcomeUser();
+        notify ? welcomeUser() : playSound('addPeer');
     });
 
     if (isMobileDevice) return;
@@ -1280,8 +1300,9 @@ function setupLocalMedia(callback, errorback) {
         .catch((err) => {
             console.error('Access denied for audio/video', err);
             playSound('error');
-            window.location.href = `/permission?roomId=${roomId}&getUserMediaError=${err.toString()} <br/>
-                                    Check the common getusermedia errors <a href="https://blog.addpipe.com/common-getusermedia-errors" target="_blank">here<a/>`;
+            openURL(
+                `/permission?roomId=${roomId}&getUserMediaError=${err.toString()} <br/> Check the common getusermedia errors <a href="https://blog.addpipe.com/common-getusermedia-errors" target="_blank">here<a/>`,
+            );
             if (errorback) errorback();
         });
 } // end [setup_local_stream]
@@ -1308,6 +1329,7 @@ function loadLocalMedia(stream) {
     const myVideoParagraphImg = document.createElement('i');
     const myVideoParagraph = document.createElement('h4');
     const myHandStatusIcon = document.createElement('button');
+    const myVideoToImgBtn = document.createElement('button');
     const myVideoStatusIcon = document.createElement('button');
     const myAudioStatusIcon = document.createElement('button');
     const myVideoFullScreenBtn = document.createElement('button');
@@ -1323,35 +1345,44 @@ function loadLocalMedia(stream) {
     myCountTimeImg.setAttribute('id', 'countTimeImg');
     myCountTimeImg.className = 'fas fa-clock';
     myCountTime.setAttribute('id', 'countTime');
-    setTippy(myCountTime, 'Session Time', 'bottom');
 
     // my peer name
     myVideoParagraphImg.setAttribute('id', 'myVideoParagraphImg');
     myVideoParagraphImg.className = 'fas fa-user';
     myVideoParagraph.setAttribute('id', 'myVideoParagraph');
     myVideoParagraph.className = 'videoPeerName';
-    setTippy(myVideoParagraph, 'My name', 'bottom');
 
     // my hand status element
     myHandStatusIcon.setAttribute('id', 'myHandStatusIcon');
     myHandStatusIcon.className = 'fas fa-hand-paper pulsate';
     myHandStatusIcon.style.setProperty('color', 'rgb(0, 255, 0)');
-    setTippy(myHandStatusIcon, 'My hand is RAISED', 'bottom');
 
     // my video status element
     myVideoStatusIcon.setAttribute('id', 'myVideoStatusIcon');
     myVideoStatusIcon.className = 'fas fa-video';
-    setTippy(myVideoStatusIcon, 'My video is ON', 'bottom');
 
     // my audio status element
     myAudioStatusIcon.setAttribute('id', 'myAudioStatusIcon');
     myAudioStatusIcon.className = 'fas fa-microphone';
-    setTippy(myAudioStatusIcon, 'My audio is ON', 'bottom');
+
+    // my video to image
+    myVideoToImgBtn.setAttribute('id', 'myVideoToImgBtn');
+    myVideoToImgBtn.className = 'fas fa-camera-retro';
 
     // my video full screen mode
     myVideoFullScreenBtn.setAttribute('id', 'myVideoFullScreenBtn');
     myVideoFullScreenBtn.className = 'fas fa-expand';
-    setTippy(myVideoFullScreenBtn, 'Full screen mode', 'bottom');
+
+    // no mobile devices
+    if (!isMobileDevice) {
+        setTippy(myCountTime, 'Session Time', 'bottom');
+        setTippy(myVideoParagraph, 'My name', 'bottom');
+        setTippy(myHandStatusIcon, 'My hand is RAISED', 'bottom');
+        setTippy(myVideoStatusIcon, 'My video is ON', 'bottom');
+        setTippy(myAudioStatusIcon, 'My audio is ON', 'bottom');
+        setTippy(myVideoToImgBtn, 'Take a snapshot', 'bottom');
+        setTippy(myVideoFullScreenBtn, 'Full screen mode', 'bottom');
+    }
 
     // my video avatar image
     myVideoAvatarImage.setAttribute('id', 'myVideoAvatarImage');
@@ -1372,6 +1403,7 @@ function loadLocalMedia(stream) {
     myStatusMenu.appendChild(myHandStatusIcon);
     myStatusMenu.appendChild(myVideoStatusIcon);
     myStatusMenu.appendChild(myAudioStatusIcon);
+    myStatusMenu.appendChild(myVideoToImgBtn);
     myStatusMenu.appendChild(myVideoFullScreenBtn);
 
     // add my pitchBar
@@ -1408,6 +1440,7 @@ function loadLocalMedia(stream) {
     setupVideoUrlPlayer();
     startCountTime();
     handleVideoPlayerFs('myVideo', 'myVideoFullScreenBtn');
+    handleVideoToImg('myVideo', 'myVideoToImgBtn');
 }
 
 /**
@@ -1440,10 +1473,11 @@ function loadRemoteMediaStream(stream, peers, peer_id) {
     const remotePrivateMsgBtn = document.createElement('button');
     const remoteYoutubeBtnBtn = document.createElement('button');
     const remotePeerKickOut = document.createElement('button');
-    const remotePitchMeter = document.createElement('div');
-    const remotePitchBar = document.createElement('div');
+    const remoteVideoToImgBtn = document.createElement('button');
     const remoteVideoFullScreenBtn = document.createElement('button');
     const remoteVideoAvatarImage = document.createElement('img');
+    const remotePitchMeter = document.createElement('div');
+    const remotePitchBar = document.createElement('div');
 
     // menu Status
     remoteStatusMenu.setAttribute('id', peer_id + '_menuStatus');
@@ -1454,7 +1488,6 @@ function loadRemoteMediaStream(stream, peers, peer_id) {
     remoteVideoParagraphImg.className = 'fas fa-user';
     remoteVideoParagraph.setAttribute('id', peer_id + '_name');
     remoteVideoParagraph.className = 'videoPeerName';
-    setTippy(remoteVideoParagraph, 'Participant name', 'bottom');
 
     const peerVideoText = document.createTextNode(peers[peer_id]['peer_name']);
     remoteVideoParagraph.appendChild(peerVideoText);
@@ -1462,37 +1495,47 @@ function loadRemoteMediaStream(stream, peers, peer_id) {
     remoteHandStatusIcon.setAttribute('id', peer_id + '_handStatus');
     remoteHandStatusIcon.style.setProperty('color', 'rgb(0, 255, 0)');
     remoteHandStatusIcon.className = 'fas fa-hand-paper pulsate';
-    setTippy(remoteHandStatusIcon, 'Participant hand is RAISED', 'bottom');
 
     // remote video status element
     remoteVideoStatusIcon.setAttribute('id', peer_id + '_videoStatus');
     remoteVideoStatusIcon.className = 'fas fa-video';
-    setTippy(remoteVideoStatusIcon, 'Participant video is ON', 'bottom');
 
     // remote audio status element
     remoteAudioStatusIcon.setAttribute('id', peer_id + '_audioStatus');
     remoteAudioStatusIcon.className = 'fas fa-microphone';
-    setTippy(remoteAudioStatusIcon, 'Participant audio is ON', 'bottom');
 
     // remote peer YouTube video
     remoteYoutubeBtnBtn.setAttribute('id', peer_id + '_youtube');
     remoteYoutubeBtnBtn.className = 'fab fa-youtube';
-    setTippy(remoteYoutubeBtnBtn, 'Send YouTube video', 'bottom');
 
     // remote private message
     remotePrivateMsgBtn.setAttribute('id', peer_id + '_privateMsg');
     remotePrivateMsgBtn.className = 'fas fa-paper-plane';
-    setTippy(remotePrivateMsgBtn, 'Send private message', 'bottom');
+
+    // my video to image
+    remoteVideoToImgBtn.setAttribute('id', peer_id + '_snapshot');
+    remoteVideoToImgBtn.className = 'fas fa-camera-retro';
 
     // remote peer kick out
     remotePeerKickOut.setAttribute('id', peer_id + '_kickOut');
     remotePeerKickOut.className = 'fas fa-sign-out-alt';
-    setTippy(remotePeerKickOut, 'Kick out', 'bottom');
 
     // remote video full screen mode
     remoteVideoFullScreenBtn.setAttribute('id', peer_id + '_fullScreen');
     remoteVideoFullScreenBtn.className = 'fas fa-expand';
-    setTippy(remoteVideoFullScreenBtn, 'Full screen mode', 'bottom');
+
+    // no mobile devices
+    if (!isMobileDevice) {
+        setTippy(remoteVideoParagraph, 'Participant name', 'bottom');
+        setTippy(remoteHandStatusIcon, 'Participant hand is RAISED', 'bottom');
+        setTippy(remoteVideoStatusIcon, 'Participant video is ON', 'bottom');
+        setTippy(remoteAudioStatusIcon, 'Participant audio is ON', 'bottom');
+        setTippy(remoteYoutubeBtnBtn, 'Send YouTube video', 'bottom');
+        setTippy(remotePrivateMsgBtn, 'Send private message', 'bottom');
+        setTippy(remoteVideoToImgBtn, 'Take a snapshot', 'bottom');
+        setTippy(remotePeerKickOut, 'Kick out', 'bottom');
+        setTippy(remoteVideoFullScreenBtn, 'Full screen mode', 'bottom');
+    }
 
     // my video avatar image
     remoteVideoAvatarImage.setAttribute('id', peer_id + '_avatar');
@@ -1515,6 +1558,7 @@ function loadRemoteMediaStream(stream, peers, peer_id) {
     remoteStatusMenu.appendChild(remoteAudioStatusIcon);
     remoteStatusMenu.appendChild(remoteYoutubeBtnBtn);
     remoteStatusMenu.appendChild(remotePrivateMsgBtn);
+    remoteStatusMenu.appendChild(remoteVideoToImgBtn);
     remoteStatusMenu.appendChild(remotePeerKickOut);
     remoteStatusMenu.appendChild(remoteVideoFullScreenBtn);
 
@@ -1541,6 +1585,8 @@ function loadRemoteMediaStream(stream, peers, peer_id) {
     attachMediaStream(remoteMedia, remoteMediaStream);
     // resize video elements
     resizeVideos();
+    // handle video to image
+    handleVideoToImg(peer_id + '_video', peer_id + '_snapshot', peer_id);
     // handle video full screen mode
     handleVideoPlayerFs(peer_id + '_video', peer_id + '_fullScreen', peer_id);
     // handle kick out button event
@@ -1743,6 +1789,53 @@ function handleVideoPlayerFs(videoId, videoFullScreenBtnId, peer_id = null) {
             // console.log("Esc FS isVideoOnFullScreen", isVideoOnFullScreen);
         }
     }
+}
+
+/**
+ * Handle Video to Img click event
+ * @param {*} videoStream
+ * @param {*} videoToImgBtn
+ * @param {*} peer_id
+ */
+function handleVideoToImg(videoStream, videoToImgBtn, peer_id = null) {
+    let videoBtn = getId(videoToImgBtn);
+    let video = getId(videoStream);
+    videoBtn.addEventListener('click', () => {
+        if (peer_id !== null) {
+            // handle remote video snapshot
+            let remoteVideoStatusBtn = getId(peer_id + '_videoStatus');
+            if (remoteVideoStatusBtn.className === 'fas fa-video') {
+                takeSnapshot(video);
+                return;
+            }
+        } else {
+            // handle local video snapshot
+            if (myVideoStatusIcon.className === 'fas fa-video') {
+                takeSnapshot(video);
+                return;
+            }
+        }
+        userLog('toast', 'Snapshot not work on video disabled');
+    });
+}
+
+/**
+ * Save Video Frame to Image
+ * @param {*} video video element
+ */
+function takeSnapshot(video) {
+    playSound('snapshot');
+    let context, canvas, width, height, dataURL;
+    width = video.videoWidth;
+    height = video.videoHeight;
+    canvas = canvas || document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0, width, height);
+    dataURL = canvas.toDataURL('image/png'); // or image/jpeg
+    console.log(dataURL);
+    saveDataToFile(dataURL, getDataTimeString() + '-SNAPSHOT.png');
 }
 
 /**
@@ -1987,13 +2080,16 @@ function setChatRoomBtn() {
         e.preventDefault();
         sendChatMessage();
     });
+
+    // adapt input font size 4 mobile
+    if (isMobileDevice) msgerInput.style.fontSize = 'xx-small';
 }
 
 /**
  * Caption room buttons click event
  */
 function setCaptionRoomBtn() {
-    if ('webkitSpeechRecognition' in window) {
+    if (window.SpeechRecognition || window.webkitSpeechRecognition) {
         // open hide caption
         captionBtn.addEventListener('click', (e) => {
             if (!isCaptionBoxVisible) {
@@ -2438,8 +2534,10 @@ function setLocalVideoQuality() {
         .applyConstraints(videoConstraints)
         .then(() => {
             logStreamSettingsInfo('setLocalVideoQuality', localMediaStream);
+            videoQualitySelectedIndex = videoQualitySelect.selectedIndex;
         })
         .catch((err) => {
+            videoQualitySelect.selectedIndex = videoQualitySelectedIndex;
             console.error('setLocalVideoQuality', err);
             userLog('error', "Your device doesn't support the selected video quality, please select the another one.");
         });
@@ -3198,7 +3296,7 @@ function showChatRoomDraggable() {
     }
     chatRoomBtn.className = 'fas fa-comment-slash';
     msgerDraggable.style.top = '50%';
-    msgerDraggable.style.left = '50%';
+    msgerDraggable.style.left = isMobileDevice ? '50%' : '25%';
     msgerDraggable.style.display = 'flex';
     isChatRoomVisible = true;
     // only for desktop
@@ -3218,7 +3316,7 @@ function showCaptionDraggable() {
     }
     captionBtn.className = 'far fa-closed-captioning';
     captionDraggable.style.top = '50%';
-    captionDraggable.style.left = '50%';
+    captionDraggable.style.left = isMobileDevice ? '50' : '75%';
     captionDraggable.style.display = 'flex';
     isCaptionBoxVisible = true;
     // only for desktop
@@ -4185,7 +4283,7 @@ function handleRoomLocked() {
             popup: 'animate__animated animate__fadeOutUp',
         },
     }).then((result) => {
-        if (result.isConfirmed) window.location.href = '/newcall';
+        if (result.isConfirmed) openURL('/newcall');
     });
 }
 
@@ -5176,7 +5274,7 @@ function handleKickedOut(config) {
             popup: 'animate__animated animate__fadeOutUp',
         },
     }).then(() => {
-        window.location.href = '/newcall';
+        openURL('/newcall');
     });
 }
 
@@ -5231,7 +5329,13 @@ function leaveRoom() {
             popup: 'animate__animated animate__fadeOutUp',
         },
     }).then((result) => {
-        if (result.isConfirmed) window.location.href = '/newcall';
+        if (result.isConfirmed) {
+            if (surveyActive) {
+                openURL(surveyURL);
+            } else {
+                openURL('/newcall');
+            }
+        }
     });
 }
 
@@ -5446,6 +5550,13 @@ async function playSound(name) {
         // Automatic playback failed. (safari)
         return;
     }
+}
+
+/**
+ * Open specified URL
+ */
+function openURL(url, blank = false) {
+    blank ? window.open(url, '_blank') : (window.location.href = url);
 }
 
 /**
