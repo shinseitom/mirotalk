@@ -20,6 +20,7 @@ dependencies: {
 }
 
 MiroTalk Signaling Server
+
 Copyright (C) 2022 Miroslav Pejic <miroslav.pejic.85@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
@@ -50,8 +51,8 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
-app.use(cors()); // Enable All CORS Requests for all origins
-app.use(compression()); // Compress all HTTP responses using GZip
+const Logger = require('./Logger');
+const log = new Logger('server');
 
 const isHttps = false; // must be the same to client.js isHttps
 const port = process.env.PORT || 3000; // must be the same to client.js signalingServerPort
@@ -65,42 +66,67 @@ if (isHttps) {
         cert: fs.readFileSync(path.join(__dirname, '../ssl/cert.pem'), 'utf-8'),
     };
     server = https.createServer(options, app);
-    io = new Server().listen(server);
     host = 'https://' + 'localhost' + ':' + port;
 } else {
     server = http.createServer(app);
-    io = new Server().listen(server);
     host = 'http://' + 'localhost' + ':' + port;
 }
 
-const ngrok = require('ngrok');
+/*  
+    Set maxHttpBufferSize from 1e6 (1MB) to 1e7 (10MB)
+    Set pingTimeout from 20000 ms to 60000 ms 
+*/
+io = new Server({
+    maxHttpBufferSize: 1e7,
+    pingTimeout: 60000,
+}).listen(server);
+
+// console.log(io);
+
+// Swagger config
 const yamlJS = require('yamljs');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = yamlJS.load(path.join(__dirname + '/../api/swagger.yaml'));
-const { v4: uuidV4 } = require('uuid');
 
+// Api config
+const { v4: uuidV4 } = require('uuid');
 const apiBasePath = '/api/v1'; // api endpoint path
 const api_docs = host + apiBasePath + '/docs'; // api docs
 const api_key_secret = process.env.API_KEY_SECRET || 'mirotalk_default_secret';
+
+// Ngrok config
+const ngrok = require('ngrok');
 const ngrokEnabled = process.env.NGROK_ENABLED;
 const ngrokAuthToken = process.env.NGROK_AUTH_TOKEN;
+
+// Turn config
 const turnEnabled = process.env.TURN_ENABLED;
 const turnUrls = process.env.TURN_URLS;
 const turnUsername = process.env.TURN_USERNAME;
 const turnCredential = process.env.TURN_PASSWORD;
 
-const Logger = require('./Logger');
-const log = new Logger('server');
+// directory
+const dir = {
+    public: path.join(__dirname, '../../', 'public'),
+};
+// html views
+const view = {
+    client: path.join(__dirname, '../../', 'public/view/client.html'),
+    landing: path.join(__dirname, '../../', 'public/view/landing.html'),
+    newCall: path.join(__dirname, '../../', 'public/view/newcall.html'),
+    notFound: path.join(__dirname, '../../', 'public/view/404.html'),
+    permission: path.join(__dirname, '../../', 'public/view/permission.html'),
+    privacy: path.join(__dirname, '../../', 'public/view/privacy.html'),
+};
 
 let channels = {}; // collect channels
 let sockets = {}; // collect sockets
 let peers = {}; // collect peers info grp by channels
 
-// Use all static files from the public folder
-app.use(express.static(path.join(__dirname, '../../', 'public')));
-
-// Api parse body data as json
-app.use(express.json());
+app.use(cors()); // Enable All CORS Requests for all origins
+app.use(compression()); // Compress all HTTP responses using GZip
+app.use(express.json()); // Api parse body data as json
+app.use(express.static(dir.public)); // Use all static files from the public folder
 
 // Remove trailing slashes in url handle bad requests
 app.use((err, req, res, next) => {
@@ -120,29 +146,24 @@ app.use((err, req, res, next) => {
     }
 });
 
-/*
-app.get(["/"], (req, res) => {
-    res.sendFile(path.join(__dirname, "public/view/client.html"))
-}); */
-
 // all start from here
 app.get(['/'], (req, res) => {
-    res.sendFile(path.join(__dirname, '../../', 'public/view/landing.html'));
+    res.sendFile(view.landing);
 });
 
 // set new room name and join
 app.get(['/newcall'], (req, res) => {
-    res.sendFile(path.join(__dirname, '../../', 'public/view/newcall.html'));
+    res.sendFile(view.newCall);
 });
 
 // if not allow video/audio
 app.get(['/permission'], (req, res) => {
-    res.sendFile(path.join(__dirname, '../../', 'public/view/permission.html'));
+    res.sendFile(view.permission);
 });
 
 // privacy policy
 app.get(['/privacy'], (req, res) => {
-    res.sendFile(path.join(__dirname, '../../', 'public/view/privacy.html'));
+    res.sendFile(view.privacy);
 });
 
 // no room name specified to join
@@ -161,20 +182,19 @@ app.get('/join/', (req, res) => {
         let notify = req.query.notify;
         // all the params are mandatory for the direct room join
         if (roomName && peerName && peerAudio && peerVideo && notify) {
-            res.sendFile(path.join(__dirname, '../../', 'public/view/client.html'));
-            return;
+            return res.sendFile(view.client);
         }
     }
     res.redirect('/');
 });
 
-// join to room
+// Join Room *
 app.get('/join/*', (req, res) => {
     if (Object.keys(req.query).length > 0) {
         log.debug('redirect:' + req.url + ' to ' + url.parse(req.url).pathname);
         res.redirect(url.parse(req.url).pathname);
     } else {
-        res.sendFile(path.join(__dirname, '../../', 'public/view/client.html'));
+        res.sendFile(view.client);
     }
 });
 
@@ -223,7 +243,7 @@ function getMeetingURL(host) {
 
 // not match any of page before, so 404 not found
 app.get('*', function (req, res) {
-    res.sendFile(path.join(__dirname, '../../', 'public/view/404.html'));
+    res.sendFile(view.notFound);
 });
 
 /**
@@ -330,11 +350,11 @@ io.sockets.on('connect', (socket) => {
     /**
      * On peer diconnected
      */
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
         for (let channel in socket.channels) {
             removePeerFrom(channel);
         }
-        log.debug('[' + socket.id + '] disconnected');
+        log.debug('[' + socket.id + '] disconnected', { reason: reason });
         delete sockets[socket.id];
     });
 
@@ -432,6 +452,7 @@ io.sockets.on('connect', (socket) => {
                 if ('Locked' in peers[channel]) delete peers[channel];
                 break;
         }
+        log.debug('connected peers grp by roomId', peers);
 
         for (let id in channels[channel]) {
             await channels[channel][id].emit('removePeer', { peer_id: socket.id });

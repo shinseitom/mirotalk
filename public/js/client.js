@@ -6,6 +6,7 @@
  ██████ ███████ ██ ███████ ██   ████    ██ 
 
 MiroTalk Browser Client
+
 Copyright (C) 2022 Miroslav Pejic <miroslav.pejic.85@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
@@ -402,9 +403,9 @@ function setButtonsToolTip() {
     // not need for mobile
     if (isMobileDevice) return;
     // main buttons
-    setTippy(shareRoomBtn, 'Invite people to join', 'right-start');
-    setTippy(audioBtn, 'Click to audio OFF', 'right-start');
-    setTippy(videoBtn, 'Click to video OFF', 'right-start');
+    setTippy(shareRoomBtn, 'INVITE others to join', 'right-start');
+    setTippy(audioBtn, 'CLICK Audio OFF', 'right-start');
+    setTippy(videoBtn, 'CLICK Video OFF', 'right-start');
     setTippy(screenShareBtn, 'START screen sharing', 'right-start');
     setTippy(recordStreamBtn, 'START recording', 'right-start');
     setTippy(fullScreenBtn, 'VIEW full screen', 'right-start');
@@ -412,10 +413,10 @@ function setButtonsToolTip() {
     setTippy(captionBtn, 'OPEN the caption', 'right-start');
     setTippy(myHandBtn, 'RAISE your hand', 'right-start');
     setTippy(whiteboardBtn, 'OPEN the whiteboard', 'right-start');
-    setTippy(fileShareBtn, 'SHARE the file', 'right-start');
-    setTippy(mySettingsBtn, 'Show settings', 'right-start');
-    setTippy(aboutBtn, 'Show about', 'right-start');
-    setTippy(leaveRoomBtn, 'Leave this room', 'right-start');
+    setTippy(fileShareBtn, 'SHARE file', 'right-start');
+    setTippy(mySettingsBtn, 'SHOW settings', 'right-start');
+    setTippy(aboutBtn, 'SHOW about', 'right-start');
+    setTippy(leaveRoomBtn, 'LEAVE this room', 'right-start');
     // chat room buttons
     setTippy(msgerTheme, 'Ghost theme', 'top');
     setTippy(msgerCPBtn, 'Private messages', 'top');
@@ -713,8 +714,8 @@ function whoAreYou() {
     initAudioBtn = getId('initAudioBtn');
     initVideoBtn = getId('initVideoBtn');
 
-    setTippy(initAudioBtn, 'Click to audio OFF', 'top');
-    setTippy(initVideoBtn, 'Click to video OFF', 'top');
+    setTippy(initAudioBtn, 'Click Audio OFF', 'top');
+    setTippy(initVideoBtn, 'Click Video OFF', 'top');
 }
 
 /**
@@ -778,13 +779,13 @@ function welcomeUser() {
         html:
             `
         <br/>
-        <p style="color:white;">Share this meeting invite others to join.</p>
+        <p style="color:white;">Invite others to join. Share this meeting link.</p>
         <p style="color:rgb(8, 189, 89);">` +
             myRoomUrl +
             `</p>`,
         showDenyButton: true,
         showCancelButton: true,
-        confirmButtonText: `Copy meeting URL`,
+        confirmButtonText: `Copy URL`,
         denyButtonText: `Email invite`,
         cancelButtonText: `Close`,
         showClass: {
@@ -1055,8 +1056,8 @@ function handleIceCandidate(config) {
  * Disconnected from Signaling Server.
  * Tear down all of our peer connections and remove all the media divs.
  */
-function handleDisconnect() {
-    console.log('Disconnected from signaling server');
+function handleDisconnect(reason) {
+    console.log('Disconnected from signaling server', { reason: reason });
     for (let peer_id in peerMediaElements) {
         document.body.removeChild(peerMediaElements[peer_id].parentNode);
         resizeVideos();
@@ -1299,7 +1300,7 @@ function setupLocalMedia(callback, errorback) {
         })
         .catch((err) => {
             console.error('Access denied for audio/video', err);
-            playSound('error');
+            playSound('alert');
             openURL(
                 `/permission?roomId=${roomId}&getUserMediaError=${err.toString()} <br/> Check the common getusermedia errors <a href="https://blog.addpipe.com/common-getusermedia-errors" target="_blank">here<a/>`,
             );
@@ -1834,7 +1835,7 @@ function takeSnapshot(video) {
     context = canvas.getContext('2d');
     context.drawImage(video, 0, 0, width, height);
     dataURL = canvas.toDataURL('image/png'); // or image/jpeg
-    console.log(dataURL);
+    // console.log(dataURL);
     saveDataToFile(dataURL, getDataTimeString() + '-SNAPSHOT.png');
 }
 
@@ -2726,7 +2727,7 @@ async function shareRoomUrl() {
         Swal.fire({
             background: swalBackground,
             position: 'center',
-            title: 'Share the Room',
+            title: 'Share Room',
             // imageAlt: 'mirotalk-share',
             // imageUrl: shareUrlImg,
             html:
@@ -2736,13 +2737,13 @@ async function shareRoomUrl() {
                 <canvas id="qrRoom"></canvas>
             </div>
             <br/><br/>
-            <p style="color:white;"> Share this meeting invite others to join.</p>
+            <p style="color:white;"> Invite others to join. Share this meeting link.</p>
             <p style="color:rgb(8, 189, 89);">` +
                 myRoomUrl +
                 `</p>`,
             showDenyButton: true,
             showCancelButton: true,
-            confirmButtonText: `Copy meeting URL`,
+            confirmButtonText: `Copy URL`,
             denyButtonText: `Email invite`,
             cancelButtonText: `Close`,
             showClass: {
@@ -2794,7 +2795,7 @@ function copyRoomURL() {
     navigator.clipboard.writeText(tmpInput.value);
     console.log('Copied to clipboard Join Link ', roomURL);
     document.body.removeChild(tmpInput);
-    userLog('toast', 'Meeting URL is copied to clipboard 👍');
+    userLog('toast', 'Meeting URL copied to clipboard 👍');
 }
 
 /**
@@ -2824,7 +2825,7 @@ function handleAudio(e, init, force = null) {
     if (init) {
         audioBtn.className = 'fas fa-microphone' + (myAudioStatus ? '' : '-slash');
         if (!isMobileDevice) {
-            setTippy(initAudioBtn, myAudioStatus ? 'Click to audio OFF' : 'Click to audio ON', 'top');
+            setTippy(initAudioBtn, myAudioStatus ? 'Click Audio OFF' : 'Click Audio ON', 'top');
         }
     }
     setMyAudioStatus(myAudioStatus);
@@ -2846,7 +2847,7 @@ function handleVideo(e, init, force = null) {
     if (init) {
         videoBtn.className = 'fas fa-video' + (myVideoStatus ? '' : '-slash');
         if (!isMobileDevice) {
-            setTippy(initVideoBtn, myVideoStatus ? 'Click to video OFF' : 'Click to video ON', 'top');
+            setTippy(initVideoBtn, myVideoStatus ? 'Click Video OFF' : 'Click Video ON', 'top');
         }
     }
     setMyVideoStatus(myVideoStatus);
@@ -2955,7 +2956,7 @@ function setMyVideoStatusTrue() {
     emitPeerStatus('video', myVideoStatus);
     // only for desktop
     if (!isMobileDevice) {
-        setTippy(videoBtn, 'Click to video OFF', 'right-start');
+        setTippy(videoBtn, 'Click Video OFF', 'right-start');
     }
 }
 
@@ -3043,7 +3044,7 @@ function refreshMyLocalStream(stream, localAudioTrackChange = false) {
 
     /**
      * When you stop the screen sharing, on default i turn back to the webcam with video stream ON.
-     * If you want the webcam with video stream OFF, just disable it with the button (click to video OFF),
+     * If you want the webcam with video stream OFF, just disable it with the button (Click Video OFF),
      * before to stop the screen sharing.
      */
     if (myVideoStatus === false) localMediaStream.getVideoTracks()[0].enabled = false;
@@ -3328,6 +3329,7 @@ function showCaptionDraggable() {
  * Clean chat messages
  */
 function cleanMessages() {
+    playSound('newMessage');
     Swal.fire({
         background: swalBackground,
         position: 'center',
@@ -3352,6 +3354,7 @@ function cleanMessages() {
             }
             // clean object
             chatMessages = [];
+            playSound('delete');
         }
     });
 }
@@ -3360,6 +3363,7 @@ function cleanMessages() {
  * Clean captions
  */
 function cleanCaptions() {
+    playSound('newMessage');
     Swal.fire({
         background: swalBackground,
         position: 'center',
@@ -3384,6 +3388,7 @@ function cleanCaptions() {
             }
             // clean object
             transcripts = [];
+            playSound('delete');
         }
     });
 }
@@ -3733,6 +3738,7 @@ function downloadChatMsgs() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    playSound('ok');
 }
 
 /**
@@ -3746,6 +3752,7 @@ function downloadCaptions() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    playSound('ok');
 }
 
 /**
@@ -3887,7 +3894,7 @@ function setMyAudioStatus(status) {
     status ? playSound('on') : playSound('off');
     // only for desktop
     if (!isMobileDevice) {
-        setTippy(audioBtn, status ? 'Click to audio OFF' : 'Click to audio ON', 'right-start');
+        setTippy(audioBtn, status ? 'Click Audio OFF' : 'Click Audio ON', 'right-start');
     }
 }
 
@@ -3905,7 +3912,7 @@ function setMyVideoStatus(status) {
     status ? playSound('on') : playSound('off');
     // only for desktop
     if (!isMobileDevice) {
-        setTippy(videoBtn, status ? 'Click to video OFF' : 'Click to video ON', 'right-start');
+        setTippy(videoBtn, status ? 'Click Video OFF' : 'Click Video ON', 'right-start');
     }
 }
 
@@ -4634,6 +4641,7 @@ function wbCanvasSaveImg() {
     const dataNow = getDataTimeString();
     const fileName = `whiteboard-${dataNow}.png`;
     saveDataToFile(dataURL, fileName);
+    playSound('ok');
 }
 
 /**
@@ -4722,6 +4730,7 @@ function confirmCleanBoard() {
     }).then((result) => {
         if (result.isConfirmed) {
             whiteboardAction(getWhiteboardAction('clear'));
+            playSound('delete');
         }
     });
 }
@@ -4908,11 +4917,11 @@ function selectFileToShare() {
         imageAlt: 'mirotalk-file-sharing',
         imageUrl: fileSharingImg,
         position: 'center',
-        title: 'Share the file',
+        title: 'Share file',
         input: 'file',
         inputAttributes: {
             accept: fileSharingInput,
-            'aria-label': 'Select the file',
+            'aria-label': 'Select file',
         },
         showDenyButton: true,
         confirmButtonText: `Send`,
@@ -5461,37 +5470,24 @@ function handleMyVolume(data) {
  */
 function userLog(type, message) {
     switch (type) {
+        case 'warning':
         case 'error':
             Swal.fire({
                 background: swalBackground,
                 position: 'center',
-                icon: 'error',
-                title: 'Oops...',
+                icon: type,
+                title: type,
                 text: message,
             });
-            playSound('error');
+            playSound('alert');
             break;
         case 'info':
-            Swal.fire({
-                background: swalBackground,
-                position: 'center',
-                icon: 'info',
-                title: 'Info',
-                text: message,
-                showClass: {
-                    popup: 'animate__animated animate__fadeInDown',
-                },
-                hideClass: {
-                    popup: 'animate__animated animate__fadeOutUp',
-                },
-            });
-            break;
         case 'success':
             Swal.fire({
                 background: swalBackground,
                 position: 'center',
-                icon: 'success',
-                title: 'Success',
+                icon: type,
+                title: type,
                 text: message,
                 showClass: {
                     popup: 'animate__animated animate__fadeInDown',
