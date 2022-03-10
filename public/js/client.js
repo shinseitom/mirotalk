@@ -67,7 +67,7 @@ const chatInputEmoji = {
     ':+1:': '\uD83D\uDC4D',
 }; // https://github.com/wooorm/gemoji/blob/main/support.md
 
-let myPeerId;
+let myPeerId; // socket.id
 
 // video cam - screen max frame rate
 let videoMaxFrameRate = 30;
@@ -3163,7 +3163,7 @@ function handleMediaRecorderStart(event) {
     }
     console.log('MediaRecorder started: ', event);
     isStreamRecording = true;
-    recordStreamBtn.style.setProperty('color', 'red');
+    recordStreamBtn.style.setProperty('color', '#ff4500');
     startRecordingTime();
     // only for desktop
     if (!isMobileDevice) {
@@ -3200,7 +3200,7 @@ function handleMediaRecorderStop(event) {
         emitPeersAction('recStop');
         emitPeerStatus('rec', isRecScreenSream);
     }
-    setRecordButtonUi();
+    recordStreamBtn.style.setProperty('color', '#000');
     downloadRecordedStream();
     // only for desktop
     if (!isMobileDevice) {
@@ -3215,13 +3215,6 @@ function handleMediaRecorderStop(event) {
  */
 function stopStreamRecording() {
     mediaRecorder.stop();
-}
-
-/**
- * Set Record Button UI on change theme
- */
-function setRecordButtonUi() {
-    recordStreamBtn.style.setProperty('color', '#fff');
 }
 
 /**
@@ -3560,7 +3553,7 @@ function msgerAddPeers(peers) {
     for (let peer_id in peers) {
         let peer_name = peers[peer_id]['peer_name'];
         // bypass insert to myself in the list :)
-        if (peer_name != myPeerName) {
+        if (peer_id != myPeerId) {
             let exsistMsgerPrivateDiv = getId(peer_id + '_pMsgDiv');
             // if there isn't add it....
             if (!exsistMsgerPrivateDiv) {
