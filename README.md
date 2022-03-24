@@ -4,6 +4,8 @@
 
 **`miroslavpejic85`** [![Author](https://img.shields.io/badge/Author-Miroslav-brightgreen.svg)](https://www.linkedin.com/in/miroslav-pejic-976a07101/)
 ![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)
+[![Code style: prettier](https://img.shields.io/badge/Code_style-Prettier-ff69b4.svg?)](https://github.com/prettier/prettier)
+[![Discord](https://img.shields.io/badge/chat-discord-green)](https://discord.gg/rgGYfeYW3N)
 
 <br>
 
@@ -47,6 +49,10 @@ Open the app with the following **supported browsers** and many more.
 -   Direct `peer-to-peer` connection ensures the lowest latency thanks to `WebRTC`
 -   Supports [REST API](app/api/README.md) (Application Programming Interface)
 
+## Presentation
+
+https://www.canva.com/design/DAE693uLOIU/view
+
 ## Demo
 
 -   `Open` https://mirotalk.up.railway.app/newcall or https://mirotalk.herokuapp.com/newcall
@@ -63,7 +69,7 @@ Open the app with the following **supported browsers** and many more.
     | Params | Type    | Description      |
     | ------ | ------- | ---------------- |
     | room   | string  | room Id          |
-    | name   | string  | your name        |
+    | name   | string  | user name        |
     | audio  | boolean | enable / disable |
     | video  | boolean | enable / disable |
     | notify | boolean | enable / disable |
@@ -130,11 +136,11 @@ The API documentation uses [swagger](https://swagger.io/) at http://localhost:30
 
 ---
 
+## HTTPS
+
+If you want `MiroTalk` to be `reachable` from the `outside` of your local network, you can use a service like [ngrok](https://ngrok.com/) (by editing the [Ngrok part](https://github.com/miroslavpejic85/mirotalk/blob/master/.env.template#L1) on `.env` file) or expose it directly on [HTTPS](app/ssl/README.md)
+
 ## Live demo
-
-If you want `MiroTalk` to be `reachable` from the `outside` of your local network, you can use a service like [ngrok](https://ngrok.com/) (by editing the [Ngrok part](https://github.com/miroslavpejic85/mirotalk/blob/master/.env.template#L1) on `.env` file) or expose it directly on [HTTPS](app/ssl/README.md) or deploy it on:
-
-<br>
 
 <a target="_blank" href="https://www.heroku.com/"><img src="https://www.herokucdn.com/deploy/button.svg" style="width: 220px;"></a>
 
@@ -162,10 +168,15 @@ https://mirotalk.up.railway.app/
 
 -   Contributions are welcome and greatly appreciated!
 -   Just run before `npm run lint`
--   For communication we use [gitter](https://gitter.im/) or [discord](https://discord.com/) chats which can be found here:
 
-[![Gitter](https://badges.gitter.im/mirotalk/community.svg)](https://gitter.im/mirotalk/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Discord](https://img.shields.io/badge/chat-discord-green)](https://discord.gg/rgGYfeYW3N)
+## Discussions
+
+-   For discussions about the project, join with us on [Discord](https://discord.gg/rgGYfeYW3N)
+
+<br/>
 
 ## License
 
 [![AGPLv3](public/images/AGPLv3.png)](LICENSE)
+
+MiroTalk is free and can be modified and forked. But the conditions of the AGPLv3 (GNU Affero General Public License v3.0) need to be respected. In particular modifications need to be free as well and made available to the public. Get a quick overview of the license at [Choose an open source license](https://choosealicense.com/licenses/agpl-3.0/).

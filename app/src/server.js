@@ -47,7 +47,7 @@ const app = express();
 const Logger = require('./Logger');
 const log = new Logger('server');
 
-const isHttps = false; // must be the same to client.js isHttps
+const isHttps = false; // must be the same on client.js
 const port = process.env.PORT || 3000; // must be the same to client.js signalingServerPort
 
 let io, server, host;
@@ -102,6 +102,7 @@ const dir = {
 };
 // html views
 const view = {
+    about: path.join(__dirname, '../../', 'public/view/about.html'),
     client: path.join(__dirname, '../../', 'public/view/client.html'),
     landing: path.join(__dirname, '../../', 'public/view/landing.html'),
     newCall: path.join(__dirname, '../../', 'public/view/newcall.html'),
@@ -140,6 +141,11 @@ app.use((err, req, res, next) => {
 // all start from here
 app.get(['/'], (req, res) => {
     res.sendFile(view.landing);
+});
+
+// mirotalk about
+app.get(['/about'], (req, res) => {
+    res.sendFile(view.about);
 });
 
 // set new room name and join
@@ -181,12 +187,7 @@ app.get('/join/', (req, res) => {
 
 // Join Room *
 app.get('/join/*', (req, res) => {
-    if (Object.keys(req.query).length > 0) {
-        log.debug('redirect:' + req.url + ' to ' + url.parse(req.url).pathname);
-        res.redirect(url.parse(req.url).pathname);
-    } else {
-        res.sendFile(view.client);
-    }
+    res.sendFile(view.client);
 });
 
 /**
@@ -300,15 +301,15 @@ async function ngrokStart() {
         let tunnelHttps = pu0.startsWith('https') ? pu0 : pu1;
         // server settings
         log.debug('settings', {
-            server: host,
-            server_tunnel: tunnelHttps,
-            api_docs: api_docs,
-            api_key_secret: api_key_secret,
             iceServers: iceServers,
             ngrok: {
                 ngrok_enabled: ngrokEnabled,
                 ngrok_token: ngrokAuthToken,
             },
+            server: host,
+            server_tunnel: tunnelHttps,
+            api_docs: api_docs,
+            api_key_secret: api_key_secret,
         });
     } catch (err) {
         console.error('[Error] ngrokStart', err);
@@ -335,15 +336,15 @@ server.listen(port, null, () => {
     );
 
     // https tunnel
-    if (ngrokEnabled == 'true') {
+    if (ngrokEnabled == 'true' && isHttps === false) {
         ngrokStart();
     } else {
         // server settings
         log.debug('settings', {
+            iceServers: iceServers,
             server: host,
             api_docs: api_docs,
             api_key_secret: api_key_secret,
-            iceServers: iceServers,
         });
     }
 });
